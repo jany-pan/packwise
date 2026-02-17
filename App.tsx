@@ -571,189 +571,21 @@ const App: React.FC = () => {
           </section>
         )}
 
-        {/* Tab Selection */}
-        <div className="flex gap-2 mb-8 bg-slate-100/50 p-1.5 rounded-3xl">
-           <button 
-             onClick={() => setActiveTab('stats')}
-             className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'stats' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}
-           >
-             {t.stats}
-           </button>
-           <button 
-             onClick={() => setActiveTab('ai')}
-             className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ai' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}
-           >
-             {t.insights}
-           </button>
-        </div>
-
+        {/* 1. GEAR LIST (The part you provided) */}
         {activeTab === 'list' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Participant Tabs */}
-            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-              {trip.participants.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => setActiveParticipantId(p.id)}
-                  className={`shrink-0 px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${
-                    activeParticipantId === p.id 
-                    ? 'bg-slate-900 border-slate-900 text-white shadow-xl' 
-                    : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
-                  }`}
-                >
-                  {/* 👑 Show crown icon ONLY if this person's ID matches the Trip Leader ID */}
-                  {trip.leaderId === p.id && (
-                    <Crown size={12} className={activeParticipantId === p.id ? 'text-amber-300' : 'text-amber-400'} />
-                  )}
-                  {p.ownerName}
-                </button>
-              ))}
-              {!isViewOnly && (
-                <button 
-                  onClick={addParticipant}
-                  className="shrink-0 px-6 py-3.5 rounded-2xl border-2 border-dashed border-slate-200 text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all flex items-center gap-2"
-                >
-                  <Plus size={16} /> <span className="text-[10px] font-black uppercase">{t.addParticipant}</span>
-                </button>
-              )}
-            </div>
-
-            {activeParticipant && (
-              <div className="space-y-8 pb-10">
-                <div className="flex justify-between items-center px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                      <User size={20} />
-                    </div>
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={openRenameModal}>
-                      <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
-                        {activeParticipant.ownerName}
-                      </h2>
-                      
-                      {/* 👑 Trip Leader Badge */}
-                      {trip.leaderId === activeParticipant.id && (
-                        <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1 shrink-0">
-                          <Crown size={10} className="text-amber-500" /> {t.tripLeader}
-                        </span>
-                      )}
-
-                      {!isViewOnly && (
-                        <Pencil size={14} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
-                      )}
-                    </div>
-                  </div>
-                  {!isViewOnly && (
-                    <button 
-                      onClick={() => setShowAddModal(true)}
-                      className="bg-indigo-600 text-white px-7 py-4 rounded-[1.5rem] text-xs font-black flex items-center gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest"
-                    >
-                      <Plus size={18} /> {t.addItem}
-                    </button>
-                  )}
-                </div>
-
-                {activeParticipant.items.length === 0 ? (
-                  <div className="bg-white rounded-[3rem] p-16 text-center border-2 border-dashed border-slate-100">
-                    <Package className="text-slate-100 w-24 h-24 mx-auto mb-6" />
-                    <h3 className="text-slate-900 font-black mb-2 text-xl">{t.emptyPack}</h3>
-                    <p className="text-slate-500 text-sm mb-10 font-medium px-10 leading-relaxed">{t.startAdding}</p>
-                    {!isViewOnly && (
-                      <button onClick={() => setShowAddModal(true)} className="bg-slate-50 text-indigo-600 px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
-                        {t.firstItem}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-10">
-                    {Object.entries(getGroupedItems(activeParticipant.items)).map(([cat, catItems]) => (
-                      <div key={cat} className="space-y-4">
-                        <div className="flex items-center gap-4 px-2">
-                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md ${getCategoryColor(cat as Category)}`}>
-                              {getCategoryIcon(cat as Category)}
-                           </div>
-                           <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.15em]">
-                             {t.categories[cat as Category]}
-                           </h3>
-                           <div className="flex-1 border-b border-slate-100"></div>
-                        </div>
-                        <div className="space-y-3">
-                          {catItems.map(item => (
-                            <div 
-                              key={item.id} 
-                              className={`bg-white rounded-[2rem] p-4 pl-5 shadow-sm border border-slate-50 flex items-center gap-4 transition-all hover:shadow-md ${
-                                item.isChecked ? 'opacity-50 grayscale' : '' // <--- Dim if packed
-                              } ${item.isWorn ? 'bg-amber-50/10' : ''}`}
-                            >
-                              {/* NEW: Checkbox Button */}
-                              <button
-                                onClick={() => toggleCheck(item.id)}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  item.isChecked 
-                                    ? 'bg-emerald-500 border-emerald-500 text-white' 
-                                    : 'border-slate-200 hover:border-emerald-400'
-                                }`}
-                              >
-                                {item.isChecked && <Check size={14} strokeWidth={4} />}
-                              </button>
-
-                              {/* Existing Item Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-1">
-                                  <h4 className={`font-black text-slate-800 truncate text-base ${item.isChecked ? 'line-through decoration-2 decoration-slate-300' : ''}`}>
-                                    {item.name}
-                                  </h4>
-                                  {/* ... rest of your tags (Worn, Consumable) ... */}
-                                  <div className="flex gap-1.5">
-                                      {item.isWorn && <span className="text-[8px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-black uppercase">{t.worn}</span>}
-                                      {item.isConsumable && <Utensils size={12} className="text-emerald-500" />}
-                                  </div>
-                                </div>
-                                
-                                {/* ... rest of weights/prices ... */}
-                                <div className="flex items-center gap-5">
-                                    <div className="flex items-center gap-1.5 text-indigo-600 font-black text-[11px] uppercase">
-                                        <Scale size={14} className="opacity-50" />
-                                        {(item.weight * item.quantity / 1000).toFixed(2)}kg
-                                    </div>
-                                    <div className="text-slate-300 font-bold text-[10px] uppercase">
-                                        {item.quantity}x {item.weight}g
-                                    </div>
-                                    {item.price > 0 && <div className="text-emerald-500 font-black text-[11px]">€{item.price * item.quantity}</div>}
-                                </div>
-                              </div>
-
-                              {/* Existing Delete/Edit Buttons */}
-                              {!isViewOnly && (
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => toggleStatus(item.id, 'isWorn')} 
-                                    className={`p-3.5 rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
-                                  >
-                                    <Tag size={18} />
-                                  </button>
-                                  <button onClick={() => removeItem(item.id)} className="p-3.5 text-rose-400 hover:bg-rose-50 rounded-2xl transition-all border-2 border-transparent">
-                                    <Trash2 size={18} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+             {/* ... Keep everything you pasted here ... */}
           </div>
         )}
 
+        {/* 2. MERGED DASHBOARD (Replaces the old separate 'stats' and 'ai' blocks) */}
         {activeTab === 'stats' && totalGroupStats && (
-          <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.groupStats}</h2>
             
+            {/* Cards for Weights/Budget */}
             <div className="grid grid-cols-2 gap-5">
-               <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-slate-200">
+               <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl">
                   <p className="text-[9px] font-black uppercase opacity-50 mb-2 tracking-[0.2em]">{t.totalWeight}</p>
                   <p className="text-4xl font-black">{(totalGroupStats.totalWeight / 1000).toFixed(1)} <span className="text-base font-normal opacity-40">kg</span></p>
                </div>
@@ -763,6 +595,18 @@ const App: React.FC = () => {
                </div>
             </div>
 
+            {/* 📊 MERGED: The Weight Chart is now directly in the Stats view */}
+            {activeParticipant && (
+              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
+                  <PieChart size={20} className="text-indigo-600" />
+                  {activeParticipant.ownerName}'s {t.category}
+                </h3>
+                <WeightChart items={activeParticipant.items} />
+              </div>
+            )}
+
+            {/* Per Person List */}
             <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
               <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
                 <Users size={20} className="text-indigo-600" />
@@ -771,8 +615,14 @@ const App: React.FC = () => {
               <div className="space-y-5">
                 {groupStats?.map(ps => (
                   <div key={ps.participant.id} className="flex items-center gap-5 bg-[#fcfdfe] p-5 rounded-[1.8rem] border border-slate-50">
-                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center font-black text-indigo-600 border border-slate-50 text-xl">
+                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center font-black text-indigo-600 border border-slate-50 text-xl relative">
                       {ps.participant.ownerName[0]}
+                      {/* 👑 Show Crown icon on leader's avatar in stats list */}
+                      {trip.leaderId === ps.participant.id && (
+                        <div className="absolute -top-2 -right-2 bg-amber-400 text-white p-1 rounded-full shadow-sm">
+                          <Crown size={10} />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-black text-slate-800">{ps.participant.ownerName}</p>
@@ -786,16 +636,6 @@ const App: React.FC = () => {
                 ))}
               </div>
             </div>
-
-            {activeParticipant && (
-              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
-                  <PieChart size={20} className="text-indigo-600" />
-                  {activeParticipant.ownerName}'s {t.category}
-                </h3>
-                <WeightChart items={activeParticipant.items} />
-              </div>
-            )}
           </div>
         )}
       </main>
