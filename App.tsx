@@ -197,7 +197,7 @@ const App: React.FC = () => {
     });
   };
 
-  const handleCreateTrip = (e: React.FormEvent) => {
+  const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTripName || !newTripLeader) return;
 
