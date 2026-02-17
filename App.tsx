@@ -54,6 +54,21 @@ const App: React.FC = () => {
   const [newParticipantName, setNewParticipantName] = useState('');
 
   const t = translations[language];
+  
+  // --- Helper to track trip history ---
+  const updateTripHistory = (id: string, name: string) => {
+    const historyRaw = localStorage.getItem('packwise-history');
+    let history: {id: string, name: string}[] = historyRaw ? JSON.parse(historyRaw) : [];
+    
+    // Remove if already exists to move it to the top of the list
+    history = history.filter(item => item.id !== id);
+    
+    // Add the current trip to the start
+    history.unshift({ id, name });
+    
+    // Save only the 5 most recent trips
+    localStorage.setItem('packwise-history', JSON.stringify(history.slice(0, 5)));
+  };
 
   // Load from Supabase (Shared) or LocalStorage
   useEffect(() => {
@@ -71,6 +86,7 @@ const App: React.FC = () => {
 
         if (data && data.trip_data) {
           setTrip(data.trip_data);
+          updateTripHistory(tripId, data.trip_data.name);
           setIsViewOnly(false); // Enable editing for everyone
           if (data.trip_data.participants?.length > 0) {
              setActiveParticipantId(data.trip_data.participants[0].id);
@@ -462,6 +478,7 @@ const App: React.FC = () => {
   }
 
   if (!trip) {
+    const history: {id: string, name: string}[] = JSON.parse(localStorage.getItem('packwise-history') || '[]');
     return (
       <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-6">
         <div className="text-center max-w-sm w-full">
@@ -478,6 +495,35 @@ const App: React.FC = () => {
           >
             {t.createTrip}
           </button>
+          {/* 📜 RECENT TRIPS LIST */}
+          {history.length > 0 && (
+            <div className="mt-12 w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              {/* Header for the history section */}
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                {language === 'en' ? 'Continue Planning' : 'Pokračovať v plánovaní'}
+              </p>
+              
+              <div className="space-y-2">
+                {history.map(item => (
+                  <button
+                    key={item.id}
+                    /* This changes the URL to the specific trip ID and reloads the app */
+                    onClick={() => window.location.search = `?id=${item.id}`}
+                    className="w-full bg-white p-5 rounded-[1.8rem] border border-slate-100 flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all group shadow-sm text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                          <Clock size={14} />
+                       </div>
+                       <span className="font-black text-slate-700 text-sm">{item.name}</span>
+                    </div>
+                    {/* Arrow icon that turns indigo when you hover over the button */}
+                    <ArrowUpRight size={18} className="text-slate-200 group-hover:text-indigo-600 transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {/* 🇪🇺 Consistent Landing Page Toggle */}
           <div className="mt-8 flex justify-center">
             <button 

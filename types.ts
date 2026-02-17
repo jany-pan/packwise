@@ -47,3 +47,9 @@ export interface PackStats {
   consumableWeight: number;
   totalPrice: number;
 }
+
+export interface RecentTrip {
+  id: string; // The Supabase ID
+  name: string;
+  lastVisited: number;
+}
