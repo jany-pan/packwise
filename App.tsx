@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Trash2, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -853,7 +853,7 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-          
+
           {/* RENAME TRIP MODAL */}
           {showRenameTripModal && (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
