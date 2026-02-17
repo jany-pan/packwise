@@ -469,7 +469,9 @@ const App: React.FC = () => {
             <Mountain className="text-white w-12 h-12" />
           </div>
           <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">{t.appName}</h1>
-          <p className="text-slate-500 mb-10 font-medium px-4">The ultimate weight tracker for group treks. No accounts needed.</p>
+          <p className="text-slate-500 mb-10 font-medium px-4">
+            {t.appTagline}
+          </p>
           <button 
             onClick={() => setIsCreating(true)}
             className="w-full bg-slate-900 text-white font-black py-6 rounded-[2rem] shadow-xl hover:bg-slate-800 active:scale-95 transition-all uppercase tracking-widest text-sm"

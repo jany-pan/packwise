@@ -4,6 +4,7 @@ import { Category } from './types';
 export const translations = {
   en: {
     appName: 'PackWise',
+    appTagline: 'The ultimate weight tracker for group treks. No accounts needed.',
     baseWeight: 'Base Weight',
     totalWeight: 'Total Weight',
     wornWeight: 'Worn Weight',
@@ -77,6 +78,7 @@ export const translations = {
   },
   sk: {
     appName: 'PackWise',
+    appTagline: 'Špičkový sledovač váhy pre skupinové túry. Bez potreby účtov.',
     baseWeight: 'Základná váha',
     totalWeight: 'Celková váha',
     wornWeight: 'Váha na sebe',
