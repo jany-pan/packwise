@@ -239,8 +239,11 @@ const App: React.FC = () => {
     e.preventDefault();
     if (!newTripName || !newTripLeader) return;
 
+    // 1. Generate the unique ID for the leader first
+    const leaderId = generateUUID(); 
+
     const participants: ParticipantPack[] = [{
-      id: generateUUID(),
+      id: leaderId, // 2. Use that ID for the first participant
       ownerName: newTripLeader,
       items: []
     }];
@@ -257,6 +260,7 @@ const App: React.FC = () => {
       id: generateUUID(),
       name: newTripName,
       leaderName: newTripLeader,
+      leaderId: leaderId, // 3. Store the leader's ID in the trip object
       routeUrl: newTripUrl,
       participants
     };
@@ -270,10 +274,9 @@ const App: React.FC = () => {
 
     if (data) {
       setTrip(newTrip);
-      setActiveParticipantId(participants[0].id);
+      setActiveParticipantId(leaderId); // Use the leaderId as the active one
       setIsCreating(false);
       setIsViewOnly(false);
-      // Update URL to include the new Cloud ID
       window.history.pushState({}, '', `?id=${data.id}`);
       setTimeout(() => setShowShareModal(true), 500);
     }
@@ -317,6 +320,19 @@ const App: React.FC = () => {
       )
     });
     setShowRenameModal(false);
+  };
+
+  const changeLeader = (participantId: string) => {
+    if (!trip) return;
+    const newLeader = trip.participants.find(p => p.id === participantId);
+    if (!newLeader) return;
+
+    setTrip({
+      ...trip,
+      leaderId: newLeader.id,
+      leaderName: newLeader.ownerName
+    });
+    setShowRenameModal(false); // Close modal if open
   };
 
   const generateShareLink = () => {
@@ -605,16 +621,21 @@ const App: React.FC = () => {
                     <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
                       <User size={20} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 group cursor-pointer" onClick={openRenameModal}>
-                        <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
-                          {activeParticipant.ownerName}
-                        </h2>
-                        {!isViewOnly && (
-                          <Pencil size={14} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
-                        )}
-                      </div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.yourGear}</p>
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={openRenameModal}>
+                      <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                        {activeParticipant.ownerName}
+                      </h2>
+                      
+                      {/* 👑 Trip Leader Badge */}
+                      {trip.leaderId === activeParticipant.id && (
+                        <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1 shrink-0">
+                          <Mountain size={10} /> {t.tripLeader}
+                        </span>
+                      )}
+
+                      {!isViewOnly && (
+                        <Pencil size={14} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                      )}
                     </div>
                   </div>
                   {!isViewOnly && (
@@ -838,6 +859,14 @@ const App: React.FC = () => {
               className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
               onKeyDown={e => e.key === 'Enter' && saveRename()}
             />
+            {!isViewOnly && trip.leaderId !== activeParticipantId && (
+              <button 
+                onClick={() => activeParticipantId && changeLeader(activeParticipantId)}
+                className="w-full mb-4 py-3 border-2 border-amber-100 text-amber-600 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all flex items-center justify-center gap-2"
+              >
+                <Mountain size={14} /> Designate as Trip Leader
+              </button>
+            )}
             <div className="flex gap-3">
               <button onClick={() => setShowRenameModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
               <button onClick={saveRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>

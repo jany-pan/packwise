@@ -35,6 +35,7 @@ export interface Trip {
   id: string;
   name: string;
   leaderName: string;
+  leaderId: string;
   routeUrl?: string;
   participants: ParticipantPack[];
 }
