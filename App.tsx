@@ -270,11 +270,11 @@ const App: React.FC = () => {
     e.preventDefault();
     if (!newTripName || !newTripLeader) return;
 
-    // 1. Generate the unique ID for the leader first
+    // 1. Generate IDs
     const leaderId = generateUUID(); 
 
     const participants: ParticipantPack[] = [{
-      id: leaderId, // 2. Use that ID for the first participant
+      id: leaderId,
       ownerName: newTripLeader,
       items: []
     }];
@@ -291,24 +291,40 @@ const App: React.FC = () => {
       id: generateUUID(),
       name: newTripName,
       leaderName: newTripLeader,
-      leaderId: leaderId, // 3. Store the leader's ID in the trip object
+      leaderId: leaderId,
       routeUrl: newTripUrl,
       participants
     };
 
-    // Create in Supabase
+    // 2. Create in Supabase
     const { data, error } = await supabase
       .from('trips')
       .insert([{ trip_data: newTrip }])
       .select()
       .single();
 
+    if (error) {
+      console.error("Error creating trip:", error);
+      return;
+    }
+
     if (data) {
+      // 3. CRITICAL: Clear the old local backup to prevent "snap-back" to previous trip
+      localStorage.removeItem('packwise-trip');
+      
+      // 4. Update Trip History (The list on the landing page)
+      updateTripHistory(data.id, newTrip.name); 
+
+      // 5. Update Local State
       setTrip(newTrip);
-      setActiveParticipantId(leaderId); // Use the leaderId as the active one
+      setActiveParticipantId(leaderId);
       setIsCreating(false);
       setIsViewOnly(false);
-      window.history.pushState({}, '', `?id=${data.id}`);
+      
+      // 6. Update URL and show share modal
+      const newUrl = `${window.location.origin}${window.location.pathname}?id=${data.id}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+      
       setTimeout(() => setShowShareModal(true), 500);
     }
   };
@@ -582,10 +598,12 @@ const App: React.FC = () => {
           {!isViewOnly && (
             <button 
               onClick={() => {
-                setTrip(null);           // Returns to the landing page/history view
-                setActiveTab('list');    // Resets the navigation to the Gear List tab
+                localStorage.removeItem('packwise-trip'); // 🆕 Clear the backup
+                setTrip(null);                            // Clear the state
+                setActiveTab('list');                     // Reset tab
+                window.history.pushState({}, '', window.location.pathname); // Clear URL ID
               }} 
-              className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              className="..."
             >
               <Package className="text-white w-5 h-5" />
             </button>
