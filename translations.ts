@@ -63,7 +63,17 @@ export const translations = {
     priority: 'Impact',
     high: 'High',
     medium: 'Medium',
-    low: 'Low'
+    low: 'Low',
+    renameMember: 'Rename Member',
+    enterName: 'Enter new name',
+    save: 'Save',
+    deleteTrip: 'Delete Trip',
+    deleteConfirmTitle: 'Delete this trip?',
+    deleteConfirmDesc: 'This action cannot be undone. The trip and all data will be lost forever.',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    renameTrip: 'Rename Trip',
+    enterTripName: 'Enter trip name'
   },
   sk: {
     appName: 'PackWise',
@@ -126,6 +136,16 @@ export const translations = {
     priority: 'Dopad',
     high: 'Vysoký',
     medium: 'Stredný',
-    low: 'Nízky'
+    low: 'Nízky',
+    renameMember: 'Premenovať člena',
+    enterName: 'Zadajte nové meno',
+    save: 'Uložiť',
+    deleteTrip: 'Zmazať výlet',
+    deleteConfirmTitle: 'Zmazať tento výlet?',
+    deleteConfirmDesc: 'Táto akcia je nevratná. Výlet a všetky údaje budú navždy stratené.',
+    cancel: 'Zrušiť',
+    delete: 'Zmazať',
+    renameTrip: 'Premenovať výlet',
+    enterTripName: 'Zadajte názov výletu'
   }
 };

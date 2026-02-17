@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Trash2, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -40,6 +40,10 @@ const App: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'stats'>('list');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRenameTripModal, setShowRenameTripModal] = useState(false);
   
   // Creation Flow State
   const [isCreating, setIsCreating] = useState(false);
@@ -102,6 +106,27 @@ const App: React.FC = () => {
       }
     }
     setIsViewOnly(false);
+  };
+
+  const handleDeleteTrip = async () => {
+    if (!trip) return;
+    
+    // Delete from Supabase
+    await supabase.from('trips').delete().eq('id', trip.id);
+    
+    // Clear local state and URL
+    setTrip(null);
+    window.history.pushState({}, '', window.location.pathname);
+    setShowDeleteModal(false);
+  };
+
+  const saveTripRename = () => {
+    if (!trip || !tempName.trim()) return;
+    setTrip({
+      ...trip,
+      name: tempName.trim()
+    });
+    setShowRenameTripModal(false);
   };
 
   // Auto-save to Supabase (and local backup)
@@ -276,19 +301,22 @@ const App: React.FC = () => {
     setActiveParticipantId(newId);
   };
 
-  const renameParticipant = () => {
-    if (!trip || !activeParticipantId) return;
-    const currentName = activeParticipant?.ownerName || '';
-    const newName = window.prompt(language === 'en' ? "Enter your name:" : "Zadajte vaše meno:", currentName);
+  const openRenameModal = () => {
+    if (!activeParticipant) return;
+    setTempName(activeParticipant.ownerName);
+    setShowRenameModal(true);
+  };
+
+  const saveRename = () => {
+    if (!trip || !activeParticipantId || !tempName.trim()) return;
     
-    if (newName && newName.trim() !== '') {
-      setTrip({
-        ...trip,
-        participants: trip.participants.map(p => 
-          p.id === activeParticipantId ? { ...p, ownerName: newName.trim() } : p
-        )
-      });
-    }
+    setTrip({
+      ...trip,
+      participants: trip.participants.map(p => 
+        p.id === activeParticipantId ? { ...p, ownerName: tempName.trim() } : p
+      )
+    });
+    setShowRenameModal(false);
   };
 
   const generateShareLink = () => {
@@ -409,7 +437,20 @@ const App: React.FC = () => {
           <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-indigo-200 mx-auto mb-10 transform -rotate-6">
             <Mountain className="text-white w-12 h-12" />
           </div>
-          <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">{t.appName}</h1>
+          <div 
+            className="flex items-center gap-2 group cursor-pointer" 
+            onClick={() => {
+              setTempName(trip.name);
+              setShowRenameTripModal(true);
+            }}
+          >
+            <h1 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
+              {trip.name}
+            </h1>
+            {!isViewOnly && (
+              <Pencil size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+            )}
+          </div>
           <p className="text-slate-500 mb-10 font-medium px-4">The ultimate weight tracker for group treks. No accounts needed.</p>
           <button 
             onClick={() => setIsCreating(true)}
@@ -479,13 +520,21 @@ const App: React.FC = () => {
         <div className="flex items-center gap-2">
           {!isViewOnly && (
             <button 
-              onClick={() => setShowShareModal(true)}
-              className="p-3 text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-2xl transition-all flex items-center gap-2 px-5"
+              onClick={() => setShowDeleteModal(true)}
+              className="p-3 text-rose-400 hover:bg-rose-50 bg-slate-50 rounded-2xl transition-all border-2 border-transparent hover:border-rose-100"
+              title={t.deleteTrip}
             >
-              <Share2 size={20} />
-              <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">{t.share}</span>
+              <Trash2 size={20} />
             </button>
           )}
+
+          <button 
+            onClick={() => setShowShareModal(true)}
+            className="p-3 text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-2xl transition-all flex items-center gap-2 px-5"
+          >
+            <Share2 size={20} />
+            <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">{t.share}</span>
+          </button>
         </div>
       </header>
 
@@ -559,7 +608,7 @@ const App: React.FC = () => {
                       <User size={20} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 group cursor-pointer" onClick={renameParticipant}>
+                      <div className="flex items-center gap-2 group cursor-pointer" onClick={openRenameModal}>
                         <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
                           {activeParticipant.ownerName}
                         </h2>
@@ -766,6 +815,65 @@ const App: React.FC = () => {
               Close
             </button>
           </div>
+
+          {/* RENAME MODAL */}
+          {showRenameModal && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+                <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameMember}</h3>
+                <input 
+                  autoFocus
+                  value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  placeholder={t.enterName}
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
+                  onKeyDown={e => e.key === 'Enter' && saveRename()}
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setShowRenameModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+                  <button onClick={saveRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DELETE CONFIRM MODAL */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
+                <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Trash2 size={32} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 mb-2">{t.deleteConfirmTitle}</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.deleteConfirmDesc}</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+                  <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* RENAME TRIP MODAL */}
+          {showRenameTripModal && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+                <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameTrip}</h3>
+                <input 
+                  autoFocus
+                  value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  placeholder={t.enterTripName}
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
+                  onKeyDown={e => e.key === 'Enter' && saveTripRename()}
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setShowRenameTripModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+                  <button onClick={saveTripRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
