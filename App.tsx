@@ -813,65 +813,6 @@ const App: React.FC = () => {
               Close
             </button>
           </div>
-
-          {/* RENAME MODAL */}
-          {showRenameModal && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
-                <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameMember}</h3>
-                <input 
-                  autoFocus
-                  value={tempName}
-                  onChange={e => setTempName(e.target.value)}
-                  placeholder={t.enterName}
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
-                  onKeyDown={e => e.key === 'Enter' && saveRename()}
-                />
-                <div className="flex gap-3">
-                  <button onClick={() => setShowRenameModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
-                  <button onClick={saveRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* DELETE CONFIRM MODAL */}
-          {showDeleteModal && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
-                <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Trash2 size={32} />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 mb-2">{t.deleteConfirmTitle}</h3>
-                <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.deleteConfirmDesc}</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
-                  <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* RENAME TRIP MODAL */}
-          {showRenameTripModal && (
-            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-              <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
-                <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameTrip}</h3>
-                <input 
-                  autoFocus
-                  value={tempName}
-                  onChange={e => setTempName(e.target.value)}
-                  placeholder={t.enterTripName}
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
-                  onKeyDown={e => e.key === 'Enter' && saveTripRename()}
-                />
-                <div className="flex gap-3">
-                  <button onClick={() => setShowRenameTripModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
-                  <button onClick={saveTripRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -882,6 +823,65 @@ const App: React.FC = () => {
           onAdd={addItem}
           language={language}
         />
+      )}
+
+      {/* RENAME MODAL */}
+      {showRenameModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameMember}</h3>
+            <input 
+              autoFocus
+              value={tempName}
+              onChange={e => setTempName(e.target.value)}
+              placeholder={t.enterName}
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
+              onKeyDown={e => e.key === 'Enter' && saveRename()}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setShowRenameModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+              <button onClick={saveRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
+            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">{t.deleteConfirmTitle}</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.deleteConfirmDesc}</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+              <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RENAME TRIP MODAL */}
+      {showRenameTripModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <h3 className="text-xl font-black text-slate-900 mb-6">{t.renameTrip}</h3>
+            <input 
+              autoFocus
+              value={tempName}
+              onChange={e => setTempName(e.target.value)}
+              placeholder={t.enterTripName}
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-6 py-4 outline-none font-bold text-slate-800 mb-6 focus:border-indigo-500 transition-all"
+              onKeyDown={e => e.key === 'Enter' && saveTripRename()}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setShowRenameTripModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+              <button onClick={saveTripRename} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200">{t.save}</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
