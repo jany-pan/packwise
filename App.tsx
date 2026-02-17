@@ -270,7 +270,6 @@ const App: React.FC = () => {
     e.preventDefault();
     if (!newTripName || !newTripLeader) return;
 
-    // 1. Generate IDs
     const leaderId = generateUUID(); 
 
     const participants: ParticipantPack[] = [{
@@ -296,7 +295,7 @@ const App: React.FC = () => {
       participants
     };
 
-    // 2. Create in Supabase
+    // 1. Create in Supabase
     const { data, error } = await supabase
       .from('trips')
       .insert([{ trip_data: newTrip }])
@@ -305,26 +304,32 @@ const App: React.FC = () => {
 
     if (error) {
       console.error("Error creating trip:", error);
+      alert("Failed to create trip in database. Please check your connection.");
       return;
     }
 
     if (data) {
-      // 3. CRITICAL: Clear the old local backup to prevent "snap-back" to previous trip
+      // 2. CRITICAL: Clear the local backup FIRST
+      // This prevents the 'useEffect' from loading stale local data on redirect
       localStorage.removeItem('packwise-trip');
       
-      // 4. Update Trip History (The list on the landing page)
+      // 3. Update the history list using the ID returned from Supabase
       updateTripHistory(data.id, newTrip.name); 
 
-      // 5. Update Local State
+      // 4. Update state using the data confirmed by the database
       setTrip(newTrip);
       setActiveParticipantId(leaderId);
       setIsCreating(false);
       setIsViewOnly(false);
       
-      // 6. Update URL and show share modal
+      // 5. Update the URL to the new Supabase ID
       const newUrl = `${window.location.origin}${window.location.pathname}?id=${data.id}`;
-      window.history.pushState({ path: newUrl }, '', newUrl);
       
+      // Use 'replaceState' instead of 'pushState' for the initial creation 
+      // to ensure the 'back' button doesn't take you to a half-created state
+      window.history.replaceState({ path: newUrl }, '', newUrl);
+      
+      // 6. Delay the modal slightly to allow state to settle
       setTimeout(() => setShowShareModal(true), 500);
     }
   };
