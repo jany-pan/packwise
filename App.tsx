@@ -270,10 +270,11 @@ const App: React.FC = () => {
     e.preventDefault();
     if (!newTripName || !newTripLeader) return;
 
+    // 1. Generate the unique ID for the leader first
     const leaderId = generateUUID(); 
 
     const participants: ParticipantPack[] = [{
-      id: leaderId,
+      id: leaderId, // 2. Use that ID for the first participant
       ownerName: newTripLeader,
       items: []
     }];
@@ -290,46 +291,24 @@ const App: React.FC = () => {
       id: generateUUID(),
       name: newTripName,
       leaderName: newTripLeader,
-      leaderId: leaderId,
+      leaderId: leaderId, // 3. Store the leader's ID in the trip object
       routeUrl: newTripUrl,
       participants
     };
 
-    // 1. Create in Supabase
+    // Create in Supabase
     const { data, error } = await supabase
       .from('trips')
       .insert([{ trip_data: newTrip }])
       .select()
       .single();
 
-    if (error) {
-      console.error("Error creating trip:", error);
-      alert("Failed to create trip in database. Please check your connection.");
-      return;
-    }
-
     if (data) {
-      // 2. CRITICAL: Clear the local backup FIRST
-      // This prevents the 'useEffect' from loading stale local data on redirect
-      localStorage.removeItem('packwise-trip');
-      
-      // 3. Update the history list using the ID returned from Supabase
-      updateTripHistory(data.id, newTrip.name); 
-
-      // 4. Update state using the data confirmed by the database
       setTrip(newTrip);
-      setActiveParticipantId(leaderId);
+      setActiveParticipantId(leaderId); // Use the leaderId as the active one
       setIsCreating(false);
       setIsViewOnly(false);
-      
-      // 5. Update the URL to the new Supabase ID
-      const newUrl = `${window.location.origin}${window.location.pathname}?id=${data.id}`;
-      
-      // Use 'replaceState' instead of 'pushState' for the initial creation 
-      // to ensure the 'back' button doesn't take you to a half-created state
-      window.history.replaceState({ path: newUrl }, '', newUrl);
-      
-      // 6. Delay the modal slightly to allow state to settle
+      window.history.pushState({}, '', `?id=${data.id}`);
       setTimeout(() => setShowShareModal(true), 500);
     }
   };
@@ -601,15 +580,7 @@ const App: React.FC = () => {
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30 px-4 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-4">
           {!isViewOnly && (
-            <button 
-              onClick={() => {
-                localStorage.removeItem('packwise-trip'); // 🆕 Clear the backup
-                setTrip(null);                            // Clear the state
-                setActiveTab('list');                     // Reset tab
-                window.history.pushState({}, '', window.location.pathname); // Clear URL ID
-              }} 
-              className="..."
-            >
+            <button onClick={() => setTrip(null)} className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100">
               <Package className="text-white w-5 h-5" />
             </button>
           )}
