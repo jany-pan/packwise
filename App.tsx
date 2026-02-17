@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -595,12 +595,16 @@ const App: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => setActiveParticipantId(p.id)}
-                  className={`shrink-0 px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                  className={`shrink-0 px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${
                     activeParticipantId === p.id 
                     ? 'bg-slate-900 border-slate-900 text-white shadow-xl' 
                     : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
                   }`}
                 >
+                  {/* 👑 Show crown icon ONLY if this person's ID matches the Trip Leader ID */}
+                  {trip.leaderId === p.id && (
+                    <Crown size={12} className={activeParticipantId === p.id ? 'text-amber-300' : 'text-amber-400'} />
+                  )}
                   {p.ownerName}
                 </button>
               ))}
@@ -629,7 +633,7 @@ const App: React.FC = () => {
                       {/* 👑 Trip Leader Badge */}
                       {trip.leaderId === activeParticipant.id && (
                         <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1 shrink-0">
-                          <Mountain size={10} /> {t.tripLeader}
+                          <Crown size={10} className="text-amber-500" /> {t.tripLeader}
                         </span>
                       )}
 
