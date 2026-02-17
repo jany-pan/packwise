@@ -532,13 +532,21 @@ const App: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* 🌐 Language Switcher */}
+          {/* 🇪🇺 Text-Based Language Toggle */}
           <button 
             onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
-            className="p-3 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100"
-            title={language === 'en' ? 'Slovenčina' : 'English'}
+            className="flex items-center bg-slate-50 p-1 rounded-2xl border-2 border-transparent hover:border-slate-100 transition-all"
           >
-            <Globe size={20} />
+            <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${
+              language === 'en' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'
+            }`}>
+              EN
+            </div>
+            <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${
+              language === 'sk' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'
+            }`}>
+              SK
+            </div>
           </button>
 
           {!isViewOnly && (
