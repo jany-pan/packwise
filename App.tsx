@@ -5,7 +5,6 @@ import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from '
 import { supabase } from './services/supabase';
 import { translations } from './translations';
 import WeightChart from './components/WeightChart';
-import AIInsights from './components/AIInsights';
 
 // Fallback for environments where crypto.randomUUID is not available
 const generateUUID = () => {
@@ -39,7 +38,7 @@ const App: React.FC = () => {
   const [isViewOnly, setIsViewOnly] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'list' | 'stats' | 'ai'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'stats'>('list');
   const [copySuccess, setCopySuccess] = useState(false);
   
   // Creation Flow State
@@ -484,12 +483,6 @@ const App: React.FC = () => {
         {/* Tab Selection */}
         <div className="flex gap-2 mb-8 bg-slate-100/50 p-1.5 rounded-3xl">
            <button 
-             onClick={() => setActiveTab('list')}
-             className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}
-           >
-             {t.gear}
-           </button>
-           <button 
              onClick={() => setActiveTab('stats')}
              className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'stats' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}
            >
@@ -671,16 +664,6 @@ const App: React.FC = () => {
                 <WeightChart items={activeParticipant.items} />
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === 'ai' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <Sparkles className="text-amber-500" size={28} />
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.aiTitle}</h2>
-            </div>
-            {activeParticipant && <AIInsights items={activeParticipant.items} stats={calculatePackStats(activeParticipant.items)} language={language} />}
           </div>
         )}
       </main>
