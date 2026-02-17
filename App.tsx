@@ -580,7 +580,13 @@ const App: React.FC = () => {
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30 px-4 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-4">
           {!isViewOnly && (
-            <button onClick={() => setTrip(null)} className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100">
+            <button 
+              onClick={() => {
+                setTrip(null);           // Returns to the landing page/history view
+                setActiveTab('list');    // Resets the navigation to the Gear List tab
+              }} 
+              className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+            >
               <Package className="text-white w-5 h-5" />
             </button>
           )}
