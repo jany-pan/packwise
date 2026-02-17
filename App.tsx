@@ -111,11 +111,26 @@ const App: React.FC = () => {
   const handleDeleteTrip = async () => {
     if (!trip) return;
     
-    // Delete from Supabase
-    await supabase.from('trips').delete().eq('id', trip.id);
+    // 1. Get the actual Supabase Row ID from the URL
+    const params = new URLSearchParams(window.location.search);
+    const supabaseId = params.get('id');
+
+    if (supabaseId) {
+      // 2. Delete using the correct database ID
+      const { error } = await supabase
+        .from('trips')
+        .delete()
+        .eq('id', supabaseId);
+      
+      if (error) {
+        console.error("Error deleting trip:", error);
+        return;
+      }
+    }
     
-    // Clear local state and URL
+    // 3. Clear local state and reset the app
     setTrip(null);
+    localStorage.removeItem('packwise-trip'); // Clean up local backup too
     window.history.pushState({}, '', window.location.pathname);
     setShowDeleteModal(false);
   };
