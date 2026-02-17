@@ -437,20 +437,7 @@ const App: React.FC = () => {
           <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-indigo-200 mx-auto mb-10 transform -rotate-6">
             <Mountain className="text-white w-12 h-12" />
           </div>
-          <div 
-            className="flex items-center gap-2 group cursor-pointer" 
-            onClick={() => {
-              setTempName(trip.name);
-              setShowRenameTripModal(true);
-            }}
-          >
-            <h1 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
-              {trip.name}
-            </h1>
-            {!isViewOnly && (
-              <Pencil size={16} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
-            )}
-          </div>
+          <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">{t.appName}</h1>
           <p className="text-slate-500 mb-10 font-medium px-4">The ultimate weight tracker for group treks. No accounts needed.</p>
           <button 
             onClick={() => setIsCreating(true)}
@@ -506,11 +493,22 @@ const App: React.FC = () => {
               <Package className="text-white w-5 h-5" />
             </button>
           )}
-          <div>
-            <h1 className="text-lg font-black text-slate-900 leading-none mb-1">
-              {trip.name}
-            </h1>
+          <div 
+            className="flex flex-col group cursor-pointer" 
+            onClick={() => {
+              setTempName(trip.name);
+              setShowRenameTripModal(true);
+            }}
+          >
             <div className="flex items-center gap-2">
+              <h1 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-none">
+                {trip.name}
+              </h1>
+              {!isViewOnly && (
+                <Pencil size={12} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.tripLeader}: {trip.leaderName}</p>
             </div>
