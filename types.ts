@@ -21,6 +21,7 @@ export interface GearItem {
   quantity: number;
   isWorn: boolean;
   isConsumable: boolean;
+  isChecked?: boolean;
   notes?: string;
 }
 

@@ -164,7 +164,7 @@ const App: React.FC = () => {
 
   const addItem = (newItemData: Omit<GearItem, 'id'>) => {
     if (!trip || !activeParticipantId) return;
-    const newItem = { ...newItemData, id: generateUUID() };
+    const newItem = { ...newItemData, id: generateUUID(), isChecked: false };
     setTrip({
       ...trip,
       participants: trip.participants.map(p => 
@@ -192,6 +192,19 @@ const App: React.FC = () => {
         p.id === activeParticipantId ? { 
           ...p, 
           items: p.items.map(item => item.id === id ? { ...item, [field]: !item[field] } : item) 
+        } : p
+      )
+    });
+  };
+
+  const toggleCheck = (id: string) => {
+    if (!trip || !activeParticipantId) return;
+    setTrip({
+      ...trip,
+      participants: trip.participants.map(p => 
+        p.id === activeParticipantId ? { 
+          ...p, 
+          items: p.items.map(item => item.id === id ? { ...item, isChecked: !item.isChecked } : item) 
         } : p
       )
     });
@@ -571,37 +584,62 @@ const App: React.FC = () => {
                         </div>
                         <div className="space-y-3">
                           {catItems.map(item => (
-                            <div key={item.id} className={`bg-white rounded-[2rem] p-6 shadow-sm border border-slate-50 flex items-center gap-5 transition-all hover:shadow-md ${item.isWorn ? 'bg-amber-50/10' : ''}`}>
+                            <div 
+                              key={item.id} 
+                              className={`bg-white rounded-[2rem] p-4 pl-5 shadow-sm border border-slate-50 flex items-center gap-4 transition-all hover:shadow-md ${
+                                item.isChecked ? 'opacity-50 grayscale' : '' // <--- Dim if packed
+                              } ${item.isWorn ? 'bg-amber-50/10' : ''}`}
+                            >
+                              {/* NEW: Checkbox Button */}
+                              <button
+                                onClick={() => toggleCheck(item.id)}
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  item.isChecked 
+                                    ? 'bg-emerald-500 border-emerald-500 text-white' 
+                                    : 'border-slate-200 hover:border-emerald-400'
+                                }`}
+                              >
+                                {item.isChecked && <Check size={14} strokeWidth={4} />}
+                              </button>
+
+                              {/* Existing Item Content */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="font-black text-slate-800 truncate text-base">{item.name}</h4>
+                                <div className="flex items-center gap-3 mb-1">
+                                  <h4 className={`font-black text-slate-800 truncate text-base ${item.isChecked ? 'line-through decoration-2 decoration-slate-300' : ''}`}>
+                                    {item.name}
+                                  </h4>
+                                  {/* ... rest of your tags (Worn, Consumable) ... */}
                                   <div className="flex gap-1.5">
-                                    {item.isWorn && <span className="text-[8px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-black uppercase">{t.worn}</span>}
-                                    {item.isConsumable && <Utensils size={12} className="text-emerald-500" />}
+                                      {item.isWorn && <span className="text-[8px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-black uppercase">{t.worn}</span>}
+                                      {item.isConsumable && <Utensils size={12} className="text-emerald-500" />}
                                   </div>
                                 </div>
+                                
+                                {/* ... rest of weights/prices ... */}
                                 <div className="flex items-center gap-5">
-                                   <div className="flex items-center gap-1.5 text-indigo-600 font-black text-[11px] uppercase">
-                                     <Scale size={14} className="opacity-50" />
-                                     {(item.weight * item.quantity / 1000).toFixed(2)}kg
-                                   </div>
-                                   <div className="text-slate-300 font-bold text-[10px] uppercase">
-                                     {item.quantity}x {item.weight}g
-                                   </div>
-                                   {item.price > 0 && <div className="text-emerald-500 font-black text-[11px]">€{item.price * item.quantity}</div>}
+                                    <div className="flex items-center gap-1.5 text-indigo-600 font-black text-[11px] uppercase">
+                                        <Scale size={14} className="opacity-50" />
+                                        {(item.weight * item.quantity / 1000).toFixed(2)}kg
+                                    </div>
+                                    <div className="text-slate-300 font-bold text-[10px] uppercase">
+                                        {item.quantity}x {item.weight}g
+                                    </div>
+                                    {item.price > 0 && <div className="text-emerald-500 font-black text-[11px]">€{item.price * item.quantity}</div>}
                                 </div>
                               </div>
+
+                              {/* Existing Delete/Edit Buttons */}
                               {!isViewOnly && (
                                 <div className="flex gap-2">
-                                   <button 
-                                     onClick={() => toggleStatus(item.id, 'isWorn')} 
-                                     className={`p-3.5 rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
-                                   >
-                                     <Tag size={18} />
-                                   </button>
-                                   <button onClick={() => removeItem(item.id)} className="p-3.5 text-rose-400 hover:bg-rose-50 rounded-2xl transition-all border-2 border-transparent">
-                                     <Trash2 size={18} />
-                                   </button>
+                                  <button 
+                                    onClick={() => toggleStatus(item.id, 'isWorn')} 
+                                    className={`p-3.5 rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
+                                  >
+                                    <Tag size={18} />
+                                  </button>
+                                  <button onClick={() => removeItem(item.id)} className="p-3.5 text-rose-400 hover:bg-rose-50 rounded-2xl transition-all border-2 border-transparent">
+                                    <Trash2 size={18} />
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -677,11 +715,11 @@ const App: React.FC = () => {
                 <Share2 size={44} strokeWidth={2.5} />
               </div>
               <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">{t.share}</h2>
-              <div className="bg-amber-50 p-4 rounded-2xl mb-4 border border-amber-100 flex gap-3 text-left">
-                 <AlertTriangle className="text-amber-500 shrink-0" size={20} />
-                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                   <strong>Important:</strong> This link is a snapshot. If you or your friends add items, you must generate and share a <strong>NEW</strong> link to see the updates.
-                 </p>
+              <div className="bg-emerald-50 p-4 rounded-2xl mb-4 border border-emerald-100 flex gap-3 text-left">
+                <Users className="text-emerald-500 shrink-0" size={20} />
+                <p className="text-xs text-emerald-800 font-medium leading-relaxed">
+                  <strong>Live Collaboration:</strong> Anyone with this link can edit the packing list. Changes appear instantly for everyone!
+                </p>
               </div>
             </div>
             
