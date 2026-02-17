@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
+import { supabase } from './services/supabase';
 import { translations } from './translations';
 import WeightChart from './components/WeightChart';
 import AIInsights from './components/AIInsights';
@@ -51,21 +52,38 @@ const App: React.FC = () => {
 
   const t = translations[language];
 
-  // Load from URL (Shared) or LocalStorage
+  // Load from Supabase (Shared) or LocalStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sharedData = params.get('share');
+    const tripId = params.get('id');
 
-    if (sharedData) {
-      try {
-        const decoded = JSON.parse(fromBase64(sharedData));
-        setTrip(decoded);
-        setIsViewOnly(true);
-        if (decoded.participants.length > 0) setActiveParticipantId(decoded.participants[0].id);
-      } catch (e) {
-        console.error("Failed to decode shared data", e);
-        loadLocalData();
-      }
+    if (tripId) {
+      // Fetch from Cloud
+      const fetchTrip = async () => {
+        const { data, error } = await supabase
+          .from('trips')
+          .select('trip_data')
+          .eq('id', tripId)
+          .single();
+
+        if (data && data.trip_data) {
+          setTrip(data.trip_data);
+          setIsViewOnly(false); // Enable editing for everyone
+          if (data.trip_data.participants?.length > 0) {
+             setActiveParticipantId(data.trip_data.participants[0].id);
+          }
+
+          // Enable Realtime Updates (Sync with friends)
+          supabase
+            .channel('trip_updates')
+            .on('postgres_changes', 
+              { event: 'UPDATE', schema: 'public', table: 'trips', filter: `id=eq.${tripId}` }, 
+              (payload) => { setTrip(payload.new.trip_data); }
+            )
+            .subscribe();
+        }
+      };
+      fetchTrip();
     } else {
       loadLocalData();
     }
@@ -87,13 +105,27 @@ const App: React.FC = () => {
     setIsViewOnly(false);
   };
 
-  // Auto-save to local storage if NOT in view-only mode
+  // Auto-save to Supabase (and local backup)
   useEffect(() => {
-    if (trip && !isViewOnly) {
-      localStorage.setItem('packwise-trip', JSON.stringify(trip));
-      localStorage.setItem('packwise-lang', language);
+    if (!trip) return;
+
+    // Always save local preferences
+    localStorage.setItem('packwise-lang', language);
+
+    const params = new URLSearchParams(window.location.search);
+    const tripId = params.get('id');
+
+    if (tripId) {
+      // Debounce save to Cloud (Wait 1s after typing stops)
+      const timeoutId = setTimeout(async () => {
+        await supabase.from('trips').update({ trip_data: trip }).eq('id', tripId);
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    } else {
+       // Local backup if not on cloud yet
+       localStorage.setItem('packwise-trip', JSON.stringify(trip));
     }
-  }, [trip, language, isViewOnly]);
+  }, [trip, language]);
 
   const activeParticipant = useMemo(() => {
     return trip?.participants.find(p => p.id === activeParticipantId) || null;
@@ -192,11 +224,22 @@ const App: React.FC = () => {
       participants
     };
 
-    setTrip(newTrip);
-    setActiveParticipantId(participants[0].id);
-    setIsCreating(false);
-    setIsViewOnly(false);
-    setTimeout(() => setShowShareModal(true), 500);
+    // Create in Supabase
+    const { data, error } = await supabase
+      .from('trips')
+      .insert([{ trip_data: newTrip }])
+      .select()
+      .single();
+
+    if (data) {
+      setTrip(newTrip);
+      setActiveParticipantId(participants[0].id);
+      setIsCreating(false);
+      setIsViewOnly(false);
+      // Update URL to include the new Cloud ID
+      window.history.pushState({}, '', `?id=${data.id}`);
+      setTimeout(() => setShowShareModal(true), 500);
+    }
   };
 
   const makeEditable = () => {
@@ -223,10 +266,9 @@ const App: React.FC = () => {
 
   const generateShareLink = () => {
     if (!trip) return '';
-    const data = toBase64(JSON.stringify(trip));
-    const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('share', data);
-    return url.toString();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    return id ? `${window.location.origin}${window.location.pathname}?id=${id}` : window.location.href;
   };
 
   const copyToClipboard = () => {
