@@ -90,7 +90,7 @@ const App: React.FC = () => {
           setIsViewOnly(false); // Enable editing for everyone
           if (data.trip_data.participants?.length > 0) {
              setActiveParticipantId(data.trip_data.participants[0].id);
-          }
+          }        
 
           // Enable Realtime Updates (Sync with friends)
           supabase
@@ -100,6 +100,19 @@ const App: React.FC = () => {
               (payload) => { setTrip(payload.new.trip_data); }
             )
             .subscribe();
+        }
+        
+        // Inside fetchTrip's error handling
+        if (error || !data) {
+          console.error("Trip not found");
+          // Optional: Remove from history if it no longer exists in Supabase
+          const historyRaw = localStorage.getItem('packwise-history');
+          if (historyRaw && tripId) {
+            const history = JSON.parse(historyRaw);
+            localStorage.setItem('packwise-history', JSON.stringify(history.filter((i: any) => i.id !== tripId)));
+          }
+          setTrip(null);
+          window.history.replaceState({}, '', window.location.pathname);
         }
       };
       fetchTrip();
@@ -132,7 +145,7 @@ const App: React.FC = () => {
     const supabaseId = params.get('id');
 
     if (supabaseId) {
-      // 2. Delete using the correct database ID
+      // 2. Delete from Supabase
       const { error } = await supabase
         .from('trips')
         .delete()
@@ -142,11 +155,26 @@ const App: React.FC = () => {
         console.error("Error deleting trip:", error);
         return;
       }
+
+      // 🆕 3. CLEAN UP HISTORY: Remove from "Recent Trips"
+      const historyRaw = localStorage.getItem('packwise-history');
+      if (historyRaw) {
+        try {
+          const history = JSON.parse(historyRaw);
+          // Filter out the ID that was just deleted
+          const updatedHistory = history.filter((item: any) => item.id !== supabaseId);
+          localStorage.setItem('packwise-history', JSON.stringify(updatedHistory));
+        } catch (e) {
+          console.error("Error updating history after delete:", e);
+        }
+      }
     }
     
-    // 3. Clear local state and reset the app
+    // 4. Reset the app state
     setTrip(null);
-    localStorage.removeItem('packwise-trip'); // Clean up local backup too
+    localStorage.removeItem('packwise-trip'); // Clear the current trip backup
+    
+    // 5. Clear the URL and close modal
     window.history.pushState({}, '', window.location.pathname);
     setShowDeleteModal(false);
   };
