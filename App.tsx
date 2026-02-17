@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -276,6 +276,21 @@ const App: React.FC = () => {
     setActiveParticipantId(newId);
   };
 
+  const renameParticipant = () => {
+    if (!trip || !activeParticipantId) return;
+    const currentName = activeParticipant?.ownerName || '';
+    const newName = window.prompt(language === 'en' ? "Enter your name:" : "Zadajte vaše meno:", currentName);
+    
+    if (newName && newName.trim() !== '') {
+      setTrip({
+        ...trip,
+        participants: trip.participants.map(p => 
+          p.id === activeParticipantId ? { ...p, ownerName: newName.trim() } : p
+        )
+      });
+    }
+  };
+
   const generateShareLink = () => {
     if (!trip) return '';
     const params = new URLSearchParams(window.location.search);
@@ -544,7 +559,14 @@ const App: React.FC = () => {
                       <User size={20} />
                     </div>
                     <div>
-                      <h2 className="text-xl font-black text-slate-900 leading-tight">{activeParticipant.ownerName}</h2>
+                      <div className="flex items-center gap-2 group cursor-pointer" onClick={renameParticipant}>
+                        <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                          {activeParticipant.ownerName}
+                        </h2>
+                        {!isViewOnly && (
+                          <Pencil size={14} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                        )}
+                      </div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.yourGear}</p>
                     </div>
                   </div>
@@ -809,15 +831,31 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.category}</label>
-              <select 
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] px-7 py-5 focus:ring-8 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none appearance-none font-black text-slate-800"
-                value={category}
-                onChange={e => setCategory(e.target.value as Category)}
-              >
-                {(Object.values(Category) as Category[]).map(cat => (
-                  <option key={cat} value={cat}>{t.categories[cat]}</option>
+              <div className="grid grid-cols-4 gap-2">
+                {(Object.values(Category) as Category[]).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-2xl border-2 transition-all aspect-square ${
+                      category === cat 
+                        ? 'bg-white border-indigo-600 shadow-md scale-105' 
+                        : 'bg-slate-50 border-transparent hover:bg-white hover:border-slate-200'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm mb-1.5 transition-all ${
+                      category === cat ? getCategoryColor(cat) : 'bg-slate-300'
+                    }`}>
+                       {getCategoryIcon(cat)}
+                    </div>
+                    <span className={`text-[8px] font-black uppercase tracking-wider text-center leading-tight ${
+                      category === cat ? 'text-indigo-900' : 'text-slate-400'
+                    }`}>
+                      {t.categories[cat]}
+                    </span>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.weight} (g)</label>
