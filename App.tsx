@@ -476,12 +476,24 @@ const App: React.FC = () => {
           >
             {t.createTrip}
           </button>
-          <button 
-            onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
-            className="mt-8 flex items-center gap-2 mx-auto px-6 py-3 bg-white border border-slate-100 rounded-full text-[10px] font-black text-slate-400 hover:text-indigo-600 transition-all uppercase tracking-widest shadow-sm"
-          >
-            <Globe size={14} /> {language === 'en' ? 'English' : 'Slovenčina'}
-          </button>
+          {/* 🇪🇺 Consistent Landing Page Toggle */}
+          <div className="mt-8 flex justify-center">
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
+              className="flex items-center bg-white p-1 rounded-[1.5rem] border border-slate-100 shadow-sm hover:border-indigo-100 transition-all"
+            >
+              <div className={`px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black transition-all duration-300 ${
+                language === 'en' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'
+              }`}>
+                ENGLISH
+              </div>
+              <div className={`px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black transition-all duration-300 ${
+                language === 'sk' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'
+              }`}>
+                SLOVENČINA
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     );
