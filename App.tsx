@@ -532,6 +532,15 @@ const App: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* 🌐 Language Switcher */}
+          <button 
+            onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
+            className="p-3 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100"
+            title={language === 'en' ? 'Slovenčina' : 'English'}
+          >
+            <Globe size={20} />
+          </button>
+
           {!isViewOnly && (
             <button 
               onClick={() => setShowDeleteModal(true)}
