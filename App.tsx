@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Link as LinkIcon, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -807,7 +807,7 @@ const App: React.FC = () => {
                             >
                               <button
                                 onClick={() => toggleCheck(item.id)}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                                   item.isChecked 
                                     ? 'bg-emerald-500 border-emerald-500 text-white' 
                                     : 'border-slate-200 hover:border-emerald-400'
@@ -826,6 +826,28 @@ const App: React.FC = () => {
                                       {item.isConsumable && <Utensils size={12} className="text-emerald-500" />}
                                   </div>
                                 </div>
+                                
+                                {/* 🆕 LINK AND NOTES SECTION */}
+                                {(item.link || item.notes) && (
+                                  <div className="flex flex-col gap-1 mb-2">
+                                     {item.link && (
+                                       <a 
+                                         href={ensureProtocol(item.link)} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer" 
+                                         onClick={(e) => e.stopPropagation()}
+                                         className="text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide w-fit"
+                                       >
+                                         <ExternalLink size={10} /> {t.openLink}
+                                       </a>
+                                     )}
+                                     {item.notes && (
+                                       <p className="text-[11px] text-slate-400 font-medium leading-tight flex items-start gap-1">
+                                         <StickyNote size={10} className="mt-0.5 shrink-0 opacity-70" /> {item.notes}
+                                       </p>
+                                     )}
+                                  </div>
+                                )}
                                 
                                 <div className="flex items-center gap-5">
                                     <div className="flex items-center gap-1.5 text-indigo-600 font-black text-[11px] uppercase">
@@ -1048,8 +1070,12 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
   const [weight, setWeight] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [price, setPrice] = useState('');
+  // 🆕 New State Variables
+  const [link, setLink] = useState('');
+  const [notes, setNotes] = useState('');
   const [isWorn, setIsWorn] = useState(false);
   const [isConsumable, setIsConsumable] = useState(false);
+  
   const t = translations[language];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1061,6 +1087,8 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
       weight: parseFloat(weight),
       price: parseFloat(price) || 0,
       quantity: parseInt(quantity) || 1,
+      link,   // 🆕 Pass to parent
+      notes,  // 🆕 Pass to parent
       isWorn,
       isConsumable
     });
@@ -1076,8 +1104,9 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Name */}
+          <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.name}</label>
             <input 
               required
@@ -1089,10 +1118,10 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.category}</label>
-              <div className="grid grid-cols-4 gap-2">
+          {/* Category */}
+          <div className="space-y-2">
+             <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.category}</label>
+             <div className="grid grid-cols-4 gap-2">
                 {(Object.values(Category) as Category[]).map((cat) => (
                   <button
                     key={cat}
@@ -1117,8 +1146,11 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="space-y-3">
+          </div>
+
+          {/* Weight & Qty */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.weight} (g)</label>
               <div className="relative">
                 <input 
@@ -1132,10 +1164,7 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
                 <Weight className="absolute right-7 top-6 text-slate-200" size={20} />
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.quantity}</label>
               <input 
                 type="number"
@@ -1144,21 +1173,55 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
                 onChange={e => setQuantity(e.target.value)}
               />
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.price} (€)</label>
-              <div className="relative">
-                <input 
-                  type="number"
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] px-7 py-5 focus:ring-8 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none font-black text-slate-800 pr-14"
-                  placeholder="0"
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                />
-                <Euro className="absolute right-7 top-6 text-slate-200" size={20} />
-              </div>
-            </div>
           </div>
 
+          {/* Price & Link (New Row) */}
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.price} (€)</label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] px-7 py-5 focus:ring-8 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none font-black text-slate-800 pr-14"
+                    placeholder="0"
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                  />
+                  <Euro className="absolute right-7 top-6 text-slate-200" size={20} />
+                </div>
+             </div>
+             
+             {/* 🆕 Link Input */}
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.link} <span className="text-slate-200">{t.optional}</span></label>
+                <div className="relative">
+                  <input 
+                    type="url"
+                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] px-7 py-5 focus:ring-8 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none font-bold text-slate-800 text-xs pr-12"
+                    placeholder="https://..."
+                    value={link}
+                    onChange={e => setLink(e.target.value)}
+                  />
+                  <LinkIcon className="absolute right-7 top-6 text-slate-200" size={18} />
+                </div>
+             </div>
+          </div>
+
+          {/* 🆕 Notes Input */}
+          <div className="space-y-2">
+             <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">{t.notes} <span className="text-slate-200">{t.optional}</span></label>
+             <div className="relative">
+                <textarea 
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] px-7 py-4 focus:ring-8 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none font-medium text-slate-800 text-sm min-h-[80px] resize-none"
+                  placeholder="Size M, Red color, pack at bottom..."
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                />
+                <StickyNote className="absolute right-7 top-5 text-slate-200" size={18} />
+             </div>
+          </div>
+
+          {/* Toggles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <label className="flex items-center gap-4 cursor-pointer select-none p-6 bg-slate-50 border-2 border-slate-50 rounded-[1.8rem] hover:bg-indigo-50/30 transition-all group">
               <input 

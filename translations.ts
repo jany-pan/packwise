@@ -74,7 +74,11 @@ export const translations = {
     cancel: 'Cancel',
     delete: 'Delete',
     renameTrip: 'Rename Trip',
-    enterTripName: 'Enter trip name'
+    enterTripName: 'Enter trip name',
+    link: 'Product Link',
+    notes: 'Notes',
+    optional: '(Optional)',
+    openLink: 'Open Link',
   },
   sk: {
     appName: 'PackWise',
@@ -148,6 +152,10 @@ export const translations = {
     cancel: 'Zrušiť',
     delete: 'Zmazať',
     renameTrip: 'Premenovať výlet',
-    enterTripName: 'Zadajte názov výletu'
+    enterTripName: 'Zadajte názov výletu',
+    link: 'Odkaz na produkt',
+    notes: 'Poznámky',
+    optional: '(Voliteľné)',
+    openLink: 'Otvoriť',
   }
 };

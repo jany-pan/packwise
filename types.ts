@@ -23,6 +23,7 @@ export interface GearItem {
   isConsumable: boolean;
   isChecked?: boolean;
   notes?: string;
+  link?: string;
 }
 
 export interface ParticipantPack {
