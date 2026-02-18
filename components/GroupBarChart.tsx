@@ -130,17 +130,16 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* 2. Legend Area (Grid Alignment Fix) */}
+      {/* 2. Legend Area (Left Aligned) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-6 px-1 border-t border-slate-50 mt-4">
         {Object.values(Category).map((cat) => {
            const config = CATEGORY_CONFIG[cat];
            return (
-            <div key={cat} className="flex items-center justify-center gap-1.5 bg-slate-50/50 px-2 py-2 rounded-xl">
+            <div key={cat} className="flex items-center justify-start gap-2 bg-slate-50/50 px-3 py-2 rounded-xl">
               <div 
                 className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-white shadow-sm shrink-0"
                 style={{ backgroundColor: config.color }}
               >
-                {/* Scale icon down slightly for mobile */}
                 <div className="scale-75 sm:scale-100 flex items-center justify-center">
                   {config.icon}
                 </div>
