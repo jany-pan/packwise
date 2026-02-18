@@ -130,26 +130,28 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* 2. Legend Area (Cleanly separated below) */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-3 pt-6 px-2 border-t border-slate-50 mt-4">
+      {/* 2. Legend Area (Grid Alignment Fix) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-6 px-1 border-t border-slate-50 mt-4">
         {Object.values(Category).map((cat) => {
            const config = CATEGORY_CONFIG[cat];
            return (
-            <div key={cat} className="flex items-center gap-1.5 bg-slate-50/50 px-2 py-1 rounded-lg">
+            <div key={cat} className="flex items-center justify-center gap-1.5 bg-slate-50/50 px-2 py-2 rounded-xl">
               <div 
-                className="w-5 h-5 rounded-full flex items-center justify-center text-white shadow-sm shrink-0"
+                className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-white shadow-sm shrink-0"
                 style={{ backgroundColor: config.color }}
               >
-                {config.icon}
+                {/* Scale icon down slightly for mobile */}
+                <div className="scale-75 sm:scale-100 flex items-center justify-center">
+                  {config.icon}
+                </div>
               </div>
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">
                 {cat}
               </span>
             </div>
            );
         })}
       </div>
-    </div>
   );
 };
 
