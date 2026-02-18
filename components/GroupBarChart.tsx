@@ -7,9 +7,7 @@ interface GroupBarChartProps {
   trip: Trip;
 }
 
-// Configuration map for consistency
 const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
-  // New Categories
   [Category.PACKING]:     { color: '#8b5cf6', icon: <Backpack size={14} /> },
   [Category.SHELTER]:     { color: '#6366f1', icon: <Tent size={14} /> },
   [Category.SLEEP]:       { color: '#0ea5e9', icon: <Moon size={14} /> },
@@ -19,7 +17,6 @@ const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> 
   [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },
   [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> },
   
-  // Legacy Fallbacks (Prevents crash if DB has old data)
   'Cooking':              { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food':                 { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food & Gas':           { color: '#f59e0b', icon: <Utensils size={14} /> }
@@ -29,26 +26,18 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
   const data = useMemo(() => {
     return trip.participants.map(p => {
       const stats: any = { name: p.ownerName };
-      
-      // Initialize all categories to 0
       Object.keys(CATEGORY_CONFIG).forEach(cat => stats[cat] = 0);
 
       p.items.forEach(item => {
         const weightKg = (item.weight * item.quantity) / 1000;
-        
-        // Map old data to new keys safely
         let catKey = item.category;
         if (catKey === 'Cooking' || catKey === 'Food' || catKey === 'Food & Gas') {
            catKey = Category.KITCHEN;
         }
-        
-        // Fallback for unknown categories
         if (!CATEGORY_CONFIG[catKey]) catKey = Category.MISC;
-
         stats[catKey] += weightKg;
       });
       
-      // Round for display
       Object.keys(stats).forEach(key => {
         if (key !== 'name') stats[key] = Math.round(stats[key] * 100) / 100;
       });
@@ -57,7 +46,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
     });
   }, [trip]);
 
-  // 🆕 Custom Tooltip Component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -66,10 +54,8 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
           <div className="space-y-1.5">
             {payload.map((entry: any, index: number) => {
               if (entry.value === 0) return null;
-              
               const catKey = entry.dataKey;
               const config = CATEGORY_CONFIG[catKey];
-              
               return (
                 <div key={index} className="flex items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2">
@@ -93,7 +79,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
 
   return (
     <div className="w-full animate-in fade-in zoom-in duration-700">
-      {/* 1. Chart Area */}
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 10 }}>
@@ -122,16 +107,11 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
                 radius={[0, 0, 0, 0]}
                 maxBarSize={50}
               >
-                {/* 🆕 Permanent Labels inside segments with units */}
                 <LabelList 
                   dataKey={cat} 
                   content={(props: any) => {
                     const { x, y, width, height, value } = props;
-                    
-                    // Only show label if the segment is tall enough to fit text
-                    // Reduced threshold slightly to show more data
                     if (!value || height < 18) return null; 
-                    
                     return (
                       <text 
                         x={x + width / 2} 
@@ -139,7 +119,7 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
                         fill="#fff" 
                         textAnchor="middle" 
                         dominantBaseline="middle"
-                        fontSize="8" // Slightly smaller to fit the unit
+                        fontSize="8"
                         fontWeight="900"
                         style={{ pointerEvents: 'none' }}
                       >
@@ -154,7 +134,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* 2. Legend Area (Left Aligned) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-6 px-1 border-t border-slate-50 mt-4">
         {Object.values(Category).map((cat) => {
            const config = CATEGORY_CONFIG[cat];
