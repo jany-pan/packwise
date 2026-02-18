@@ -1015,16 +1015,16 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* 2. MERGED DASHBOARD VIEW */}
+        {/* 2. MERGED DASHBOARD VIEW (Mobile Optimized) */}
         {activeTab === 'stats' && statsViewData.stats && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.groupStats}</h2>
+          <div className="space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight px-2">{t.groupStats}</h2>
             
-            {/* STATS TABS */}
-            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            {/* STATS TABS (Compact) */}
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 no-scrollbar px-2">
               <button 
                 onClick={() => setStatsTab('group')}
-                className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                className={`shrink-0 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
                   statsTab === 'group'
                   ? 'bg-slate-900 border-slate-900 text-white'
                   : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
@@ -1036,64 +1036,65 @@ const App: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => setStatsTab(p.id)}
-                  className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${
+                  className={`shrink-0 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-1.5 sm:gap-2 ${
                     statsTab === p.id 
                     ? 'bg-white border-indigo-600 text-indigo-600 shadow-sm' 
                     : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
                   }`}
                 >
                   {trip.leaderId === p.id && (
-                    <Crown size={12} className="text-amber-400" />
+                    <Crown size={10} className="text-amber-400 sm:w-3 sm:h-3" />
                   )}
                   {p.ownerName}
                 </button>
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
-               <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl">
-                  <p className="text-[9px] font-black uppercase opacity-50 mb-2 tracking-[0.2em]">{t.totalWeight}</p>
-                  <p className="text-4xl font-black">{(statsViewData.stats.totalWeight / 1000).toFixed(1)} <span className="text-base font-normal opacity-40">kg</span></p>
+            {/* TOTAL CARDS (Grid Layout) */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-5">
+               <div className="bg-slate-900 p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] text-white shadow-2xl">
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase opacity-50 mb-1 sm:mb-2 tracking-[0.2em]">{t.totalWeight}</p>
+                  <p className="text-2xl sm:text-4xl font-black">{(statsViewData.stats.totalWeight / 1000).toFixed(1)} <span className="text-sm sm:text-base font-normal opacity-40">kg</span></p>
                </div>
-               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                  <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">{t.totalCost}</p>
-                  <p className="text-4xl font-black text-emerald-600 leading-tight">€{statsViewData.stats.totalPrice.toLocaleString()}</p>
+               <div className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm">
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase text-slate-400 mb-1 sm:mb-2 tracking-[0.2em]">{t.totalCost}</p>
+                  <p className="text-2xl sm:text-4xl font-black text-emerald-600 leading-tight">€{statsViewData.stats.totalPrice.toLocaleString()}</p>
                </div>
             </div>
 
-            {/* CHART SECTION */}
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-              <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
-                {statsViewData.isGroup ? <Users size={20} className="text-indigo-600" /> : <PieChart size={20} className="text-indigo-600" />}
+            {/* CHART SECTION (Reduced Padding) */}
+            <div className="bg-white p-5 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm">
+              <h3 className="font-black text-slate-900 mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs uppercase tracking-[0.2em]">
+                {statsViewData.isGroup ? <Users size={16} className="text-indigo-600 sm:w-5 sm:h-5" /> : <PieChart size={16} className="text-indigo-600 sm:w-5 sm:h-5" />}
                 {statsViewData.isGroup ? 'Loadout Comparison' : `${statsViewData.participant?.ownerName}'s Breakdown`}
               </h3>
               {statsViewData.chart}
             </div>
 
-            {/* LIST SECTION - Always show per person summary at bottom for reference */}
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
-              <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
-                <Users size={20} className="text-indigo-600" />
+            {/* PER PERSON LIST (Compact Rows) */}
+            <div className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm">
+              <h3 className="font-black text-slate-900 mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs uppercase tracking-[0.2em]">
+                <Users size={16} className="text-indigo-600 sm:w-5 sm:h-5" />
                 {t.perPerson}
               </h3>
-              <div className="space-y-5">
+              <div className="space-y-3 sm:space-y-5">
                 {groupStats?.map(ps => (
-                  <div key={ps.participant.id} className={`flex items-center gap-5 p-5 rounded-[1.8rem] border transition-all ${statsTab === ps.participant.id ? 'bg-indigo-50/50 border-indigo-100' : 'bg-[#fcfdfe] border-slate-50'}`}>
-                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center font-black text-indigo-600 border border-slate-50 text-xl relative">
+                  <div key={ps.participant.id} className={`flex items-center gap-3 sm:gap-5 p-3 sm:p-5 rounded-[1.5rem] sm:rounded-[1.8rem] border transition-all ${statsTab === ps.participant.id ? 'bg-indigo-50/50 border-indigo-100' : 'bg-[#fcfdfe] border-slate-50'}`}>
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 bg-white rounded-xl sm:rounded-2xl shadow-sm flex items-center justify-center font-black text-indigo-600 border border-slate-50 text-base sm:text-xl relative shrink-0">
                       {ps.participant.ownerName[0]}
                       {trip.leaderId === ps.participant.id && (
-                        <div className="absolute -top-2 -right-2 bg-amber-400 text-white p-1 rounded-full shadow-sm">
-                          <Crown size={10} />
+                        <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 bg-amber-400 text-white p-0.5 sm:p-1 rounded-full shadow-sm">
+                          <Crown size={8} className="sm:w-[10px] sm:h-[10px]" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-slate-800">{ps.participant.ownerName}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{(ps.stats.totalWeight / 1000).toFixed(2)} kg carried</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-black text-slate-800 truncate">{ps.participant.ownerName}</p>
+                      <p className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{(ps.stats.totalWeight / 1000).toFixed(2)} kg carried</p>
                     </div>
-                    <div className="text-right">
-                       <p className="text-lg font-black text-slate-900 leading-none">{(ps.stats.baseWeight / 1000).toFixed(2)}</p>
-                       <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-1">BASE KG</p>
+                    <div className="text-right shrink-0">
+                       <p className="text-sm sm:text-lg font-black text-slate-900 leading-none">{(ps.stats.baseWeight / 1000).toFixed(2)}</p>
+                       <p className="text-[8px] sm:text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-0.5 sm:mt-1">BASE KG</p>
                     </div>
                   </div>
                 ))}
