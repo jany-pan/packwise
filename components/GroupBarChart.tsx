@@ -19,7 +19,7 @@ const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> 
   [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },
   [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> },
   
-  // Legacy Fallbacks (Prevents crash if DB has old data)
+  // Legacy Fallbacks
   'Cooking':              { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food':                 { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food & Gas':           { color: '#f59e0b', icon: <Utensils size={14} /> }
@@ -42,7 +42,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
            catKey = Category.KITCHEN;
         }
         
-        // Fallback for unknown categories
         if (!CATEGORY_CONFIG[catKey]) catKey = Category.MISC;
 
         stats[catKey] += weightKg;
@@ -57,11 +56,43 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
     });
   }, [trip]);
 
+  // 🆕 Custom Tooltip with Icons
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 min-w-[150px]">
+          <p className="text-sm font-black text-slate-900 mb-3 border-b border-slate-100 pb-2">{label}</p>
+          <div className="space-y-1.5">
+            {payload.map((entry: any, index: number) => {
+              // Only show categories that have weight > 0 to keep tooltip clean
+              if (entry.value === 0) return null;
+              
+              const catKey = entry.dataKey;
+              const config = CATEGORY_CONFIG[catKey];
+              
+              return (
+                <div key={index} className="flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div style={{ color: entry.fill }} className="shrink-0">
+                      {config?.icon}
+                    </div>
+                    <span className="font-bold text-slate-500 uppercase tracking-wide text-[10px]">{entry.name}</span>
+                  </div>
+                  <span className="font-black text-slate-900">{entry.value} kg</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (trip.participants.length === 0) return null;
 
   return (
     <div className="w-full animate-in fade-in zoom-in duration-700">
-      {/* 1. Chart Area */}
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 10 }}>
@@ -79,13 +110,8 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
               tick={{ fill: '#94a3b8', fontSize: 10 }} 
               unit=" kg"
             />
-            <Tooltip 
-              cursor={{ fill: '#f8fafc' }}
-              contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px -5px rgba(0,0,0,0.1)' }}
-              itemStyle={{ fontSize: '11px', fontWeight: 600, textTransform: 'capitalize' }}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
             
-            {/* Render Bars for all active categories */}
             {Object.values(Category).map((cat) => (
               <Bar 
                 key={cat} 
@@ -100,7 +126,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* 2. Legend Area (Cleanly separated below) */}
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-3 pt-6 px-2 border-t border-slate-50 mt-4">
         {Object.values(Category).map((cat) => {
            const config = CATEGORY_CONFIG[cat];

@@ -93,6 +93,7 @@ export const translations = {
     close: 'Close',
     removePartConfirm: 'Remove this participant and all their gear?',
     removeParticipantTitle: 'Remove Participant?',
+    groupOverview: 'Group Overview',
   },
   sk: {
     appName: 'PackWise',
@@ -185,5 +186,6 @@ export const translations = {
     close: 'Zavrieť',
     removePartConfirm: 'Odstrániť tohto člena a všetku jeho výbavu?',
     removeParticipantTitle: 'Odstrániť člena?',
+    groupOverview: 'Prehľad skupiny',
   }
 };

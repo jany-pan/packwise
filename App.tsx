@@ -1016,18 +1016,21 @@ const App: React.FC = () => {
                   : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
                 }`}
               >
-                Group Overview
+                {t.groupOverview}
               </button>
               {trip.participants.map(p => (
                 <button
                   key={p.id}
                   onClick={() => setStatsTab(p.id)}
-                  className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                  className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center gap-2 ${
                     statsTab === p.id 
                     ? 'bg-white border-indigo-600 text-indigo-600 shadow-sm' 
                     : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
                   }`}
                 >
+                  {trip.leaderId === p.id && (
+                    <Crown size={12} className="text-amber-400" />
+                  )}
                   {p.ownerName}
                 </button>
               ))}
