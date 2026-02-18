@@ -865,135 +865,141 @@ const App: React.FC = () => {
             </div>
 
             {activeParticipant && (
-              <div className="space-y-8 pb-10">
+              <div className="space-y-6 sm:space-y-8 pb-10">
+                {/* 1. Participant Header (Mobile Optimized) */}
                 <div className="flex justify-between items-center px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                      <User size={20} />
+                  <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-50 rounded-xl sm:rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                      <User size={16} className="sm:w-5 sm:h-5" />
                     </div>
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={openRenameModal}>
-                      <h2 className="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                    <div className="flex items-center gap-2 group cursor-pointer overflow-hidden" onClick={openRenameModal}>
+                      <h2 className="text-base sm:text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors truncate">
                         {activeParticipant.ownerName}
                       </h2>
                       {trip.leaderId === activeParticipant.id && (
-                        <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1 shrink-0">
+                        <span className="hidden sm:flex bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider items-center gap-1 shrink-0">
                           <Crown size={10} className="text-amber-500" /> {t.tripLeader}
                         </span>
                       )}
                       {!isViewOnly && (
-                        <Pencil size={14} className="text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                        <Pencil size={12} className="text-slate-300 group-hover:text-indigo-600 transition-colors shrink-0 sm:w-[14px] sm:h-[14px]" />
                       )}
                     </div>
                   </div>
+                  
                   {!isViewOnly && (
                     <button 
                       onClick={() => { setEditingItem(null); setShowItemModal(true); }}
-                      className="bg-indigo-600 text-white px-7 py-4 rounded-[1.5rem] text-xs font-black flex items-center gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest"
+                      className="bg-indigo-600 text-white px-4 py-3 sm:px-7 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black flex items-center gap-1.5 sm:gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest shrink-0"
                     >
-                      <Plus size={18} /> {t.addItem}
+                      <Plus size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+                      <span>{t.addItem}</span>
                     </button>
                   )}
                 </div>
 
                 {activeParticipant.items.length === 0 ? (
-                  <div className="bg-white rounded-[3rem] p-16 text-center border-2 border-dashed border-slate-100">
-                    <Package className="text-slate-100 w-24 h-24 mx-auto mb-6" />
-                    <h3 className="text-slate-900 font-black mb-2 text-xl">{t.emptyPack}</h3>
-                    <p className="text-slate-500 text-sm mb-10 font-medium px-10 leading-relaxed">{t.startAdding}</p>
+                  <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-10 sm:p-16 text-center border-2 border-dashed border-slate-100">
+                    <Package className="text-slate-100 w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6" />
+                    <h3 className="text-slate-900 font-black mb-2 text-lg sm:text-xl">{t.emptyPack}</h3>
+                    <p className="text-slate-500 text-xs sm:text-sm mb-8 sm:mb-10 font-medium px-4 sm:px-10 leading-relaxed">{t.startAdding}</p>
                     {!isViewOnly && (
-                      <button onClick={() => { setEditingItem(null); setShowItemModal(true); }} className="bg-slate-50 text-indigo-600 px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
+                      <button onClick={() => { setEditingItem(null); setShowItemModal(true); }} className="bg-slate-50 text-indigo-600 px-6 py-3 sm:px-8 sm:py-4 rounded-2xl sm:rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
                         {t.firstItem}
                       </button>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-10">
+                  <div className="space-y-8 sm:space-y-10">
                     {Object.entries(getGroupedItems(activeParticipant.items)).map(([cat, catItems]) => (
-                      <div key={cat} className="space-y-4">
-                        <div className="flex items-center gap-4 px-2">
-                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md ${getCategoryColor(cat as Category)}`}>
-                              {getCategoryIcon(cat as Category)}
+                      <div key={cat} className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-3 sm:gap-4 px-2">
+                           <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white shadow-md ${getCategoryColor(cat)}`}>
+                              {/* Small icon fix */}
+                              <div className="scale-75 sm:scale-100">{getCategoryIcon(cat)}</div>
                            </div>
-                           <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.15em]">
-                             {t.categories[cat as Category]}
+                           <h3 className="text-[10px] sm:text-[11px] font-black text-slate-900 uppercase tracking-[0.15em]">
+                             {t.categories[cat as Category] || cat}
                            </h3>
                            <div className="flex-1 border-b border-slate-100"></div>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {catItems.map(item => (
                             <div 
                               key={item.id} 
-                              className={`bg-white rounded-[2rem] p-4 pl-5 shadow-sm border border-slate-50 flex items-center gap-4 transition-all hover:shadow-md ${
+                              className={`bg-white rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-4 sm:pl-5 shadow-sm border border-slate-50 flex items-center gap-3 sm:gap-4 transition-all hover:shadow-md ${
                                 item.isChecked ? 'opacity-50 grayscale' : ''
                               } ${item.isWorn ? 'bg-amber-50/10' : ''}`}
                             >
                               <button
                                 onClick={() => toggleCheck(item.id)}
-                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                                   item.isChecked 
                                     ? 'bg-emerald-500 border-emerald-500 text-white' 
                                     : 'border-slate-200 hover:border-emerald-400'
                                 }`}
                               >
-                                {item.isChecked && <Check size={14} strokeWidth={4} />}
+                                {item.isChecked && <Check size={12} strokeWidth={4} className="sm:w-[14px] sm:h-[14px]" />}
                               </button>
 
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-1">
-                                  <h4 className={`font-black text-slate-800 truncate text-base ${item.isChecked ? 'line-through decoration-2 decoration-slate-300' : ''}`}>
+                                <div className="flex items-center gap-2 sm:gap-3 mb-0.5 sm:mb-1">
+                                  <h4 className={`font-black text-slate-800 truncate text-sm sm:text-base ${item.isChecked ? 'line-through decoration-2 decoration-slate-300' : ''}`}>
                                     {item.name}
                                   </h4>
-                                  <div className="flex gap-1.5">
-                                      {item.isWorn && <span className="text-[8px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-black uppercase">{t.worn}</span>}
-                                      {item.isConsumable && <Utensils size={12} className="text-emerald-500" />}
+                                  <div className="flex gap-1">
+                                      {item.isWorn && <span className="text-[7px] sm:text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase whitespace-nowrap">{t.worn}</span>}
+                                      {item.isConsumable && <Utensils size={10} className="text-emerald-500 sm:w-[12px] sm:h-[12px]" />}
                                   </div>
                                 </div>
                                 
-                                {/* 🆕 LINK AND NOTES SECTION */}
+                                {/* Links & Notes */}
                                 {(item.link || item.notes) && (
-                                  <div className="flex flex-col gap-1 mb-2">
+                                  <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2">
                                      {item.link && (
                                        <a 
                                          href={ensureProtocol(item.link)} 
                                          target="_blank" 
                                          rel="noopener noreferrer" 
                                          onClick={(e) => e.stopPropagation()}
-                                         className="text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide w-fit"
+                                         className="text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide w-fit"
                                        >
-                                         <ExternalLink size={10} /> {t.openLink}
+                                         <ExternalLink size={9} className="sm:w-[10px] sm:h-[10px]" /> {t.openLink}
                                        </a>
                                      )}
                                      {item.notes && (
-                                       <p className="text-[11px] text-slate-400 font-medium leading-tight flex items-start gap-1">
-                                         <StickyNote size={10} className="mt-0.5 shrink-0 opacity-70" /> {item.notes}
+                                       <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium leading-tight flex items-start gap-1 truncate">
+                                         <StickyNote size={9} className="mt-0.5 shrink-0 opacity-70 sm:w-[10px] sm:h-[10px]" /> {item.notes}
                                        </p>
                                      )}
                                   </div>
                                 )}
                                 
-                                <div className="flex items-center gap-5">
-                                    <div className="flex items-center gap-1.5 text-indigo-600 font-black text-[11px] uppercase">
-                                        <Scale size={14} className="opacity-50" />
+                                <div className="flex items-center gap-3 sm:gap-5">
+                                    <div className="flex items-center gap-1 text-indigo-600 font-black text-[10px] sm:text-[11px] uppercase">
+                                        <Scale size={12} className="opacity-50 sm:w-[14px] sm:h-[14px]" />
                                         {(item.weight * item.quantity / 1000).toFixed(2)}kg
                                     </div>
-                                    <div className="text-slate-300 font-bold text-[10px] uppercase">
+                                    <div className="text-slate-300 font-bold text-[9px] sm:text-[10px] uppercase">
                                         {item.quantity}x {item.weight}g
                                     </div>
-                                    {item.price > 0 && <div className="text-emerald-500 font-black text-[11px]">€{item.price * item.quantity}</div>}
+                                    {item.price > 0 && <div className="text-emerald-500 font-black text-[10px] sm:text-[11px]">€{item.price * item.quantity}</div>}
                                 </div>
                               </div>
 
                               {!isViewOnly && (
-                                <div className="flex gap-2">
-                                  <button onClick={() => openEditModal(item)} className="p-3.5 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100 hover:text-indigo-600"><Pencil size={18} /></button>
+                                <div className="flex gap-1 sm:gap-2">
+                                  <button onClick={() => openEditModal(item)} className="p-2 sm:p-3.5 text-slate-400 hover:bg-slate-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100 hover:text-indigo-600">
+                                    <Pencil size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                  </button>
                                   <button 
                                     onClick={() => toggleStatus(item.id, 'isWorn')} 
-                                    className={`p-3.5 rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
+                                    className={`p-2 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
                                   >
-                                    <Tag size={18} />
+                                    <Tag size={16} className="sm:w-[18px] sm:h-[18px]" />
                                   </button>
-                                  <button onClick={() => removeItem(item.id)} className="p-3.5 text-rose-400 hover:bg-rose-50 rounded-2xl transition-all border-2 border-transparent">
-                                    <Trash2 size={18} />
+                                  <button onClick={() => removeItem(item.id)} className="p-2 sm:p-3.5 text-rose-400 hover:bg-rose-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent">
+                                    <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                                   </button>
                                 </div>
                               )}
