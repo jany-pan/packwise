@@ -1,12 +1,12 @@
 
 export enum Category {
+  PACKING = 'Packing', 
   SHELTER = 'Shelter',
   SLEEP = 'Sleep',
   CLOTHING = 'Clothing',
-  COOKING = 'Cooking',
+  KITCHEN = 'Kitchen', 
   ELECTRONICS = 'Electronics',
   HYGIENE = 'Hygiene',
-  FOOD = 'Food',
   MISC = 'Misc'
 }
 

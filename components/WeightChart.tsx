@@ -9,13 +9,13 @@ interface WeightChartProps {
 }
 
 const COLORS = {
+  [Category.PACKING]: '#8b5cf6',
   [Category.SHELTER]: '#6366f1',
   [Category.SLEEP]: '#0ea5e9',
   [Category.CLOTHING]: '#10b981',
-  [Category.COOKING]: '#f59e0b',
+  [Category.KITCHEN]: '#f59e0b',
   [Category.ELECTRONICS]: '#f43f5e',
   [Category.HYGIENE]: '#14b8a6',
-  [Category.FOOD]: '#34d399',
   [Category.MISC]: '#64748b'
 };
 

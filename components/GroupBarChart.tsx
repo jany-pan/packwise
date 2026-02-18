@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Trip, Category } from '../types';
-import { Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, Package } from 'lucide-react';
+import { Backpack, Utensils, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, Package } from 'lucide-react';
 
 interface GroupBarChartProps {
   trip: Trip;
@@ -9,14 +9,14 @@ interface GroupBarChartProps {
 
 // Configuration map to keep colors and icons synced with the rest of the app
 const CATEGORY_CONFIG: Record<Category, { color: string; icon: React.ReactNode }> = {
-  [Category.SHELTER]:     { color: '#6366f1', icon: <Tent size={14} /> },       // indigo-500
-  [Category.SLEEP]:       { color: '#0ea5e9', icon: <Moon size={14} /> },       // sky-500
-  [Category.CLOTHING]:    { color: '#10b981', icon: <Shirt size={14} /> },      // emerald-500
-  [Category.COOKING]:     { color: '#f59e0b', icon: <Flame size={14} /> },      // amber-500
-  [Category.ELECTRONICS]: { color: '#f43f5e', icon: <Smartphone size={14} /> }, // rose-500
-  [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },   // teal-500
-  [Category.FOOD]:        { color: '#34d399', icon: <Apple size={14} /> },      // emerald-400
-  [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> }     // slate-500
+  [Category.PACKING]:     { color: '#8b5cf6', icon: <Backpack size={14} /> },    // violet-500
+  [Category.SHELTER]:     { color: '#6366f1', icon: <Tent size={14} /> },
+  [Category.SLEEP]:       { color: '#0ea5e9', icon: <Moon size={14} /> },
+  [Category.CLOTHING]:    { color: '#10b981', icon: <Shirt size={14} /> },
+  [Category.KITCHEN]:     { color: '#f59e0b', icon: <Utensils size={14} /> },    // amber-500
+  [Category.ELECTRONICS]: { color: '#f43f5e', icon: <Smartphone size={14} /> },
+  [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },
+  [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> }
 };
 
 const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {

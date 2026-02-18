@@ -1474,13 +1474,13 @@ const AddItemModal: React.FC<{
 
 const getCategoryIcon = (cat: Category) => {
   switch (cat) {
+    case Category.PACKING: return <Backpack size={18} />; 
     case Category.SHELTER: return <Tent size={18} />;
     case Category.SLEEP: return <Moon size={18} />;
     case Category.CLOTHING: return <Shirt size={18} />;
-    case Category.COOKING: return <Flame size={18} />;
+    case Category.KITCHEN: return <Utensils size={18} />;
     case Category.ELECTRONICS: return <Smartphone size={18} />;
     case Category.HYGIENE: return <Droplets size={18} />;
-    case Category.FOOD: return <Apple size={18} />;
     case Category.MISC: return <Package size={18} />;
     default: return <Package size={18} />;
   }
@@ -1488,13 +1488,13 @@ const getCategoryIcon = (cat: Category) => {
 
 const getCategoryColor = (cat: Category) => {
   switch (cat) {
+    case Category.PACKING: return 'bg-violet-500'; 
     case Category.SHELTER: return 'bg-indigo-500';
     case Category.SLEEP: return 'bg-sky-500';
     case Category.CLOTHING: return 'bg-emerald-500';
-    case Category.COOKING: return 'bg-amber-500';
+    case Category.KITCHEN: return 'bg-amber-500'; 
     case Category.ELECTRONICS: return 'bg-rose-500';
     case Category.HYGIENE: return 'bg-teal-500';
-    case Category.FOOD: return 'bg-emerald-400';
     case Category.MISC: return 'bg-slate-500';
     default: return 'bg-indigo-500';
   }
