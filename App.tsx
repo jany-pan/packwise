@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Link as LinkIcon, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -56,6 +56,8 @@ const App: React.FC = () => {
   const [newTripUrl, setNewTripUrl] = useState('');
   const [initialParticipants, setInitialParticipants] = useState<string[]>([]);
   const [newParticipantName, setNewParticipantName] = useState('');
+  const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
+  const [participantIdToRemove, setParticipantIdToRemove] = useState<string | null>(null);
 
   const t = translations[language];
   
@@ -204,6 +206,14 @@ const App: React.FC = () => {
     // 5. Clear the URL and close modal
     window.history.pushState({}, '', window.location.pathname);
     setShowDeleteModal(false);
+  };
+
+  const confirmRemoveParticipant = () => {
+    if (participantIdToRemove) {
+      removeParticipant(participantIdToRemove);
+    }
+    setShowRemoveParticipantModal(false);
+    setParticipantIdToRemove(null);
   };
 
   const saveTripRename = () => {
@@ -800,10 +810,9 @@ const App: React.FC = () => {
                   {!isViewOnly && p.id !== trip.leaderId && (
                     <button
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent switching tabs when clicking delete
-                        if (window.confirm(t.removePartConfirm)) {
-                          removeParticipant(p.id);
-                        }
+                        e.stopPropagation();
+                        setParticipantIdToRemove(p.id);
+                        setShowRemoveParticipantModal(true);
                       }}
                       className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${
                         activeParticipantId === p.id 
@@ -1161,6 +1170,33 @@ const App: React.FC = () => {
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
               <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REMOVE PARTICIPANT MODAL */}
+      {showRemoveParticipantModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
+            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <UserMinus size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">{t.removeParticipantTitle}</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.removePartConfirm}</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowRemoveParticipantModal(false)} 
+                className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]"
+              >
+                {t.cancel}
+              </button>
+              <button 
+                onClick={confirmRemoveParticipant} 
+                className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200"
+              >
+                {t.delete}
+              </button>
             </div>
           </div>
         </div>
