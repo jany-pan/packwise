@@ -697,15 +697,15 @@ const App: React.FC = () => {
       )}
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30 px-3 py-3 sm:px-4 sm:py-4 flex justify-between items-center shadow-sm">
-        {/* Left Side: Logo & Title (Responsive Update) */}
+      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30 px-2 py-2 sm:px-4 sm:py-4 flex justify-between items-center shadow-sm">
+        {/* Left Side: Logo & Title */}
         <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
           {!isViewOnly && (
             <button 
               onClick={() => { localStorage.removeItem('packwise-trip'); setTrip(null); setActiveTab('list'); window.history.pushState({}, '', window.location.pathname); }} 
-              className="w-9 h-9 sm:w-11 sm:h-11 bg-indigo-600 rounded-[0.8rem] sm:rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 shrink-0"
+              className="w-8 h-8 sm:w-11 sm:h-11 bg-indigo-600 rounded-lg sm:rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 shrink-0"
             >
-              <Package className="text-white w-4 h-4 sm:w-5 sm:h-5" />
+              <Package className="text-white w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </button>
           )}
           <div 
@@ -715,15 +715,15 @@ const App: React.FC = () => {
               setShowRenameTripModal(true);
             }}
           >
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-none truncate max-w-[140px] sm:max-w-none">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className="text-xs sm:text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-none truncate max-w-[110px] sm:max-w-none">
                 {trip.name}
               </h1>
               {!isViewOnly && (
-                <Pencil size={12} className="text-slate-300 group-hover:text-indigo-600 transition-colors shrink-0" />
+                <Pencil size={10} className="text-slate-300 group-hover:text-indigo-600 transition-colors shrink-0 sm:w-3 sm:h-3" />
               )}
             </div>
-            {/* Hidden on mobile to save space */}
+            {/* Hidden on mobile */}
             <div className="hidden sm:flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.tripLeader}: {trip.leaderName}</p>
@@ -731,24 +731,24 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        {/* Right Side: Actions (Fully Responsive Update) */}
+        {/* Right Side: Actions (Super Compact Mobile) */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
            {/* Help Button */}
-           <button onClick={() => setShowGuideModal(true)} className="p-2 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-xl sm:rounded-2xl transition-all">
-             <HelpCircle size={18} className="sm:w-5 sm:h-5" />
+           <button onClick={() => setShowGuideModal(true)} className="p-1.5 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-lg sm:rounded-2xl transition-all">
+             <HelpCircle size={16} className="sm:w-5 sm:h-5" />
            </button>
 
           {/* Language Toggle */}
           <button 
             onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
-            className="flex items-center bg-slate-50 p-1 rounded-xl sm:rounded-2xl border-2 border-transparent hover:border-slate-100 transition-all"
+            className="flex items-center bg-slate-50 p-0.5 sm:p-1 rounded-lg sm:rounded-2xl border-2 border-transparent hover:border-slate-100 transition-all"
           >
-            <div className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black transition-all ${
+            <div className={`px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-xl text-[8px] sm:text-[10px] font-black transition-all ${
               language === 'en' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'
             }`}>
               EN
             </div>
-            <div className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black transition-all ${
+            <div className={`px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-xl text-[8px] sm:text-[10px] font-black transition-all ${
               language === 'sk' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'
             }`}>
               SK
@@ -758,18 +758,18 @@ const App: React.FC = () => {
           {!isViewOnly && (
             <button 
               onClick={() => setShowDeleteModal(true)}
-              className="p-2 sm:p-3 text-rose-400 hover:bg-rose-50 bg-slate-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent hover:border-rose-100"
+              className="p-1.5 sm:p-3 text-rose-400 hover:bg-rose-50 bg-slate-50 rounded-lg sm:rounded-2xl transition-all border-2 border-transparent hover:border-rose-100"
               title={t.deleteTrip}
             >
-              <Trash2 size={18} className="sm:w-5 sm:h-5" />
+              <Trash2 size={16} className="sm:w-5 sm:h-5" />
             </button>
           )}
 
           <button 
             onClick={() => setShowShareModal(true)}
-            className="p-2 sm:p-3 text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-xl sm:rounded-2xl transition-all flex items-center gap-2 sm:px-5"
+            className="p-1.5 sm:p-3 text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-lg sm:rounded-2xl transition-all flex items-center gap-2 sm:px-5"
           >
-            <Share2 size={18} className="sm:w-5 sm:h-5" />
+            <Share2 size={16} className="sm:w-5 sm:h-5" />
             <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">{t.share}</span>
           </button>
         </div>
