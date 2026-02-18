@@ -91,6 +91,7 @@ export const translations = {
     guideShare: 'Sharing',
     guideShareText: 'Click the "Share" button to get a link. Anyone with the link can edit the list in real-time!',
     close: 'Close',
+    removePartConfirm: 'Remove this participant and all their gear?',
   },
   sk: {
     appName: 'PackWise',
@@ -181,5 +182,6 @@ export const translations = {
     guideShare: 'Zdieľanie',
     guideShareText: 'Klikni na "Zdieľať" pre získanie odkazu. Každý s odkazom môže upravovať zoznam v reálnom čase!',
     close: 'Zavrieť',
+    removePartConfirm: 'Odstrániť tohto člena a všetku jeho výbavu?',
   }
 };
