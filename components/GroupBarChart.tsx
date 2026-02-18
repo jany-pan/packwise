@@ -152,6 +152,7 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
            );
         })}
       </div>
+    </div>
   );
 };
 
