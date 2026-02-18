@@ -8,7 +8,7 @@ interface WeightChartProps {
   items: GearItem[];
 }
 
-const COLORS = {
+const COLORS: Record<string, string> = {
   [Category.PACKING]: '#8b5cf6',
   [Category.SHELTER]: '#6366f1',
   [Category.SLEEP]: '#0ea5e9',
@@ -16,7 +16,12 @@ const COLORS = {
   [Category.KITCHEN]: '#f59e0b',
   [Category.ELECTRONICS]: '#f43f5e',
   [Category.HYGIENE]: '#14b8a6',
-  [Category.MISC]: '#64748b'
+  [Category.MISC]: '#64748b',
+  
+  // 🛡️ LEGACY
+  'Cooking': '#f59e0b',
+  'Food': '#f59e0b',
+  'Food & Gas': '#f59e0b'
 };
 
 const WeightChart: React.FC<WeightChartProps> = ({ items }) => {

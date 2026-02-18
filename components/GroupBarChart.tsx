@@ -7,29 +7,44 @@ interface GroupBarChartProps {
   trip: Trip;
 }
 
-// Configuration map to keep colors and icons synced with the rest of the app
-const CATEGORY_CONFIG: Record<Category, { color: string; icon: React.ReactNode }> = {
-  [Category.PACKING]:     { color: '#8b5cf6', icon: <Backpack size={14} /> },    // violet-500
+const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
+  // New Categories
+  [Category.PACKING]:     { color: '#8b5cf6', icon: <Backpack size={14} /> },
   [Category.SHELTER]:     { color: '#6366f1', icon: <Tent size={14} /> },
   [Category.SLEEP]:       { color: '#0ea5e9', icon: <Moon size={14} /> },
   [Category.CLOTHING]:    { color: '#10b981', icon: <Shirt size={14} /> },
-  [Category.KITCHEN]:     { color: '#f59e0b', icon: <Utensils size={14} /> },    // amber-500
+  [Category.KITCHEN]:     { color: '#f59e0b', icon: <Utensils size={14} /> },
   [Category.ELECTRONICS]: { color: '#f43f5e', icon: <Smartphone size={14} /> },
   [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },
-  [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> }
+  [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> },
+  
+  // 🛡️ LEGACY FALLBACKS (Crucial for preventing crash)
+  'Cooking':              { color: '#f59e0b', icon: <Utensils size={14} /> },
+  'Food':                 { color: '#f59e0b', icon: <Utensils size={14} /> },
+  'Food & Gas':           { color: '#f59e0b', icon: <Utensils size={14} /> }
 };
 
 const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
   const data = useMemo(() => {
     return trip.participants.map(p => {
       const stats: any = { name: p.ownerName };
-      // Initialize all categories to 0
-      Object.values(Category).forEach(cat => stats[cat] = 0);
+      
+      // Initialize with 0
+      Object.keys(CATEGORY_CONFIG).forEach(cat => stats[cat] = 0);
 
       p.items.forEach(item => {
-        // weight in kg
         const weightKg = (item.weight * item.quantity) / 1000;
-        stats[item.category] += weightKg;
+        
+        // 🛡️ Map legacy data to new keys for the chart
+        let catKey = item.category;
+        if (catKey === 'Cooking' || catKey === 'Food' || catKey === 'Food & Gas') {
+           catKey = Category.KITCHEN;
+        }
+        
+        // If it's a completely unknown category, put it in Misc
+        if (!stats[catKey]) catKey = Category.MISC;
+
+        stats[catKey] += weightKg;
       });
       
       // Round values for cleaner tooltips

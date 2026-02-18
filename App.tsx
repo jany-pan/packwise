@@ -1472,9 +1472,19 @@ const AddItemModal: React.FC<{
   );
 };
 
-const getCategoryIcon = (cat: Category) => {
+// 1. Helper to map old categories to new ones for display
+const mapCategory = (cat: string): Category => {
+  if (cat === 'Cooking' || cat === 'Food' || cat === 'Food & Gas') return Category.KITCHEN;
+  // If you had a backpack item in Misc, you'd have to move it manually, 
+  // but this handles the merged categories.
+  return cat as Category;
+};
+
+// 2. Updated Icon Getter
+const getCategoryIcon = (rawCat: string) => {
+  const cat = mapCategory(rawCat); // 🛡️ Map legacy values first
   switch (cat) {
-    case Category.PACKING: return <Backpack size={18} />; 
+    case Category.PACKING: return <Backpack size={18} />;
     case Category.SHELTER: return <Tent size={18} />;
     case Category.SLEEP: return <Moon size={18} />;
     case Category.CLOTHING: return <Shirt size={18} />;
@@ -1486,17 +1496,19 @@ const getCategoryIcon = (cat: Category) => {
   }
 };
 
-const getCategoryColor = (cat: Category) => {
+// 3. Updated Color Getter
+const getCategoryColor = (rawCat: string) => {
+  const cat = mapCategory(rawCat); // 🛡️ Map legacy values first
   switch (cat) {
-    case Category.PACKING: return 'bg-violet-500'; 
+    case Category.PACKING: return 'bg-violet-500';
     case Category.SHELTER: return 'bg-indigo-500';
     case Category.SLEEP: return 'bg-sky-500';
     case Category.CLOTHING: return 'bg-emerald-500';
-    case Category.KITCHEN: return 'bg-amber-500'; 
+    case Category.KITCHEN: return 'bg-amber-500';
     case Category.ELECTRONICS: return 'bg-rose-500';
     case Category.HYGIENE: return 'bg-teal-500';
     case Category.MISC: return 'bg-slate-500';
-    default: return 'bg-indigo-500';
+    default: return 'bg-slate-500';
   }
 };
 
