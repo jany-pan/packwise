@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Link as LinkIcon, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
 import WeightChart from './components/WeightChart';
+import GroupBarChart from './components/GroupBarChart';
 
 // Fallback for environments where crypto.randomUUID is not available
 const generateUUID = () => {
@@ -43,6 +44,8 @@ const App: React.FC = () => {
   const [showGuideModal, setShowGuideModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'list' | 'stats'>('list');
+  const [statsTab, setStatsTab] = useState<string>('group'); // 'group' or participantId
+
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -56,6 +59,7 @@ const App: React.FC = () => {
   const [newTripUrl, setNewTripUrl] = useState('');
   const [initialParticipants, setInitialParticipants] = useState<string[]>([]);
   const [newParticipantName, setNewParticipantName] = useState('');
+
   const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
   const [participantIdToRemove, setParticipantIdToRemove] = useState<string | null>(null);
 
@@ -208,14 +212,6 @@ const App: React.FC = () => {
     setShowDeleteModal(false);
   };
 
-  const confirmRemoveParticipant = () => {
-    if (participantIdToRemove) {
-      removeParticipant(participantIdToRemove);
-    }
-    setShowRemoveParticipantModal(false);
-    setParticipantIdToRemove(null);
-  };
-
   const saveTripRename = () => {
     if (!trip || !tempName.trim()) return;
     const updatedTrip = {
@@ -266,6 +262,25 @@ const App: React.FC = () => {
       totalPrice: acc.totalPrice + curr.stats.totalPrice,
     }), { totalWeight: 0, baseWeight: 0, wornWeight: 0, consumableWeight: 0, totalPrice: 0 });
   }, [groupStats]);
+
+  const statsViewData = useMemo(() => {
+    if (statsTab === 'group') {
+      return {
+        chart: <GroupBarChart trip={trip!} />,
+        stats: totalGroupStats,
+        isGroup: true
+      };
+    } else {
+      const p = trip?.participants.find(p => p.id === statsTab);
+      const stats = groupStats?.find(g => g.participant.id === statsTab)?.stats;
+      return {
+        chart: p ? <WeightChart items={p.items} /> : null,
+        stats: stats || null,
+        participant: p,
+        isGroup: false
+      };
+    }
+  }, [statsTab, trip, totalGroupStats, groupStats]);
 
   // --- ITEM ACTIONS (Using Immediate Save) ---
 
@@ -421,16 +436,22 @@ const App: React.FC = () => {
   const removeParticipant = (participantId: string) => {
     if (!trip || participantId === trip.leaderId) return;
     
-    // Remove the participant
     const updatedParticipants = trip.participants.filter(p => p.id !== participantId);
     const updatedTrip = { ...trip, participants: updatedParticipants };
     
-    // If we removed the currently active person, switch back to the leader
     if (activeParticipantId === participantId) {
       setActiveParticipantId(trip.leaderId);
     }
     
     saveTripToCloud(updatedTrip);
+  };
+
+  const confirmRemoveParticipant = () => {
+    if (participantIdToRemove) {
+      removeParticipant(participantIdToRemove);
+    }
+    setShowRemoveParticipantModal(false);
+    setParticipantIdToRemove(null);
   };
 
   const openRenameModal = () => {
@@ -981,31 +1002,58 @@ const App: React.FC = () => {
         )}
 
         {/* 2. MERGED DASHBOARD VIEW */}
-        {activeTab === 'stats' && totalGroupStats && (
+        {activeTab === 'stats' && statsViewData.stats && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.groupStats}</h2>
             
+            {/* STATS TABS */}
+            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+              <button 
+                onClick={() => setStatsTab('group')}
+                className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                  statsTab === 'group'
+                  ? 'bg-slate-900 border-slate-900 text-white'
+                  : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
+                }`}
+              >
+                Group Overview
+              </button>
+              {trip.participants.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setStatsTab(p.id)}
+                  className={`shrink-0 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                    statsTab === p.id 
+                    ? 'bg-white border-indigo-600 text-indigo-600 shadow-sm' 
+                    : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'
+                  }`}
+                >
+                  {p.ownerName}
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-2 gap-5">
                <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl">
                   <p className="text-[9px] font-black uppercase opacity-50 mb-2 tracking-[0.2em]">{t.totalWeight}</p>
-                  <p className="text-4xl font-black">{(totalGroupStats.totalWeight / 1000).toFixed(1)} <span className="text-base font-normal opacity-40">kg</span></p>
+                  <p className="text-4xl font-black">{(statsViewData.stats.totalWeight / 1000).toFixed(1)} <span className="text-base font-normal opacity-40">kg</span></p>
                </div>
                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                   <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">{t.totalCost}</p>
-                  <p className="text-4xl font-black text-emerald-600 leading-tight">€{totalGroupStats.totalPrice.toLocaleString()}</p>
+                  <p className="text-4xl font-black text-emerald-600 leading-tight">€{statsViewData.stats.totalPrice.toLocaleString()}</p>
                </div>
             </div>
 
-            {activeParticipant && (
-              <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-                <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
-                  <PieChart size={20} className="text-indigo-600" />
-                  {activeParticipant.ownerName}'s {t.category}
-                </h3>
-                <WeightChart items={activeParticipant.items} />
-              </div>
-            )}
+            {/* CHART SECTION */}
+            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+              <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
+                {statsViewData.isGroup ? <Users size={20} className="text-indigo-600" /> : <PieChart size={20} className="text-indigo-600" />}
+                {statsViewData.isGroup ? 'Loadout Comparison' : `${statsViewData.participant?.ownerName}'s Breakdown`}
+              </h3>
+              {statsViewData.chart}
+            </div>
 
+            {/* LIST SECTION - Always show per person summary at bottom for reference */}
             <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
               <h3 className="font-black text-slate-900 mb-8 flex items-center gap-3 text-xs uppercase tracking-[0.2em]">
                 <Users size={20} className="text-indigo-600" />
@@ -1013,7 +1061,7 @@ const App: React.FC = () => {
               </h3>
               <div className="space-y-5">
                 {groupStats?.map(ps => (
-                  <div key={ps.participant.id} className="flex items-center gap-5 bg-[#fcfdfe] p-5 rounded-[1.8rem] border border-slate-50">
+                  <div key={ps.participant.id} className={`flex items-center gap-5 p-5 rounded-[1.8rem] border transition-all ${statsTab === ps.participant.id ? 'bg-indigo-50/50 border-indigo-100' : 'bg-[#fcfdfe] border-slate-50'}`}>
                     <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center font-black text-indigo-600 border border-slate-50 text-xl relative">
                       {ps.participant.ownerName[0]}
                       {trip.leaderId === ps.participant.id && (
@@ -1158,29 +1206,12 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* DELETE CONFIRM MODAL */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
-            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Trash2 size={32} />
-            </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">{t.deleteConfirmTitle}</h3>
-            <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.deleteConfirmDesc}</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
-              <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* REMOVE PARTICIPANT MODAL */}
       {showRemoveParticipantModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
             <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserMinus size={32} />
+              <UserPlus size={32} className="rotate-45" /> {/* Using UserPlus rotated as UserMinus alternative if UserMinus not imported, or replace with trash */}
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-2">{t.removeParticipantTitle}</h3>
             <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.removePartConfirm}</p>
@@ -1197,6 +1228,23 @@ const App: React.FC = () => {
               >
                 {t.delete}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
+            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">{t.deleteConfirmTitle}</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">{t.deleteConfirmDesc}</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem]">{t.cancel}</button>
+              <button onClick={handleDeleteTrip} className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200">{t.delete}</button>
             </div>
           </div>
         </div>
@@ -1254,8 +1302,8 @@ const AddItemModal: React.FC<{
       weight: parseFloat(weight),
       price: parseFloat(price) || 0,
       quantity: parseInt(quantity) || 1,
-      link,   // 🆕 Pass to parent
-      notes,  // 🆕 Pass to parent
+      link,
+      notes,
       isWorn,
       isConsumable
     });
