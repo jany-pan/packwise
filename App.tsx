@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, ExternalLink, Save, Download, AlertTriangle } from 'lucide-react';
+import { Link as LinkIcon, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -36,8 +35,13 @@ const App: React.FC = () => {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [activeParticipantId, setActiveParticipantId] = useState<string | null>(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Modal States
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<GearItem | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'list' | 'stats'>('list');
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
@@ -70,6 +74,23 @@ const App: React.FC = () => {
     localStorage.setItem('packwise-history', JSON.stringify(history.slice(0, 5)));
   };
 
+  // --- CORE SAVING LOGIC (Fixes the disappearing item bug) ---
+  const saveTripToCloud = async (updatedTrip: Trip) => {
+    // 1. Update Local State immediately
+    setTrip(updatedTrip);
+    
+    // 2. Save to LocalStorage as backup
+    localStorage.setItem('packwise-trip', JSON.stringify(updatedTrip));
+
+    // 3. Save to Supabase
+    const params = new URLSearchParams(window.location.search);
+    const tripId = params.get('id');
+
+    if (tripId) {
+       await supabase.from('trips').update({ trip_data: updatedTrip }).eq('id', tripId);
+    }
+  };
+
   // Load from Supabase (Shared) or LocalStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -89,7 +110,8 @@ const App: React.FC = () => {
           updateTripHistory(tripId, data.trip_data.name);
           setIsViewOnly(false); // Enable editing for everyone
           if (data.trip_data.participants?.length > 0) {
-             setActiveParticipantId(data.trip_data.participants[0].id);
+             // Only set active participant if not already set (prevents jumping around)
+             setActiveParticipantId(prev => prev || data.trip_data.participants[0].id);
           }        
 
           // Enable Realtime Updates (Sync with friends)
@@ -97,7 +119,12 @@ const App: React.FC = () => {
             .channel('trip_updates')
             .on('postgres_changes', 
               { event: 'UPDATE', schema: 'public', table: 'trips', filter: `id=eq.${tripId}` }, 
-              (payload) => { setTrip(payload.new.trip_data); }
+              (payload) => { 
+                // Only update if the cloud version is actually different/newer
+                // In a robust app, we would merge, but for now we replace state
+                // to ensure all users see the same thing.
+                setTrip(payload.new.trip_data); 
+              }
             )
             .subscribe();
         }
@@ -181,34 +208,18 @@ const App: React.FC = () => {
 
   const saveTripRename = () => {
     if (!trip || !tempName.trim()) return;
-    setTrip({
+    const updatedTrip = {
       ...trip,
       name: tempName.trim()
-    });
+    };
+    saveTripToCloud(updatedTrip);
     setShowRenameTripModal(false);
   };
 
-  // Auto-save to Supabase (and local backup)
+  // Save language preference only
   useEffect(() => {
-    if (!trip) return;
-
-    // Always save local preferences
     localStorage.setItem('packwise-lang', language);
-
-    const params = new URLSearchParams(window.location.search);
-    const tripId = params.get('id');
-
-    if (tripId) {
-      // Debounce save to Cloud (Wait 1s after typing stops)
-      const timeoutId = setTimeout(async () => {
-        await supabase.from('trips').update({ trip_data: trip }).eq('id', tripId);
-      }, 1000);
-      return () => clearTimeout(timeoutId);
-    } else {
-       // Local backup if not on cloud yet
-       localStorage.setItem('packwise-trip', JSON.stringify(trip));
-    }
-  }, [trip, language]);
+  }, [language]);
 
   const activeParticipant = useMemo(() => {
     return trip?.participants.find(p => p.id === activeParticipantId) || null;
@@ -246,31 +257,54 @@ const App: React.FC = () => {
     }), { totalWeight: 0, baseWeight: 0, wornWeight: 0, consumableWeight: 0, totalPrice: 0 });
   }, [groupStats]);
 
-  const addItem = (newItemData: Omit<GearItem, 'id'>) => {
+  // --- ITEM ACTIONS (Using Immediate Save) ---
+
+  const handleSaveItem = (itemData: Omit<GearItem, 'id'>) => {
     if (!trip || !activeParticipantId) return;
-    const newItem = { ...newItemData, id: generateUUID(), isChecked: false };
-    setTrip({
-      ...trip,
-      participants: trip.participants.map(p => 
-        p.id === activeParticipantId ? { ...p, items: [...p.items, newItem] } : p
-      )
-    });
-    setShowAddModal(false);
+    
+    let updatedTrip = { ...trip };
+    
+    if (editingItem) {
+      // Update existing item
+      updatedTrip = {
+        ...trip,
+        participants: trip.participants.map(p => 
+          p.id === activeParticipantId ? { 
+            ...p, 
+            items: p.items.map(i => i.id === editingItem.id ? { ...itemData, id: editingItem.id, isChecked: i.isChecked } : i) 
+          } : p
+        )
+      };
+    } else {
+      // Add new item
+      const newItem = { ...itemData, id: generateUUID(), isChecked: false };
+      updatedTrip = {
+        ...trip,
+        participants: trip.participants.map(p => 
+          p.id === activeParticipantId ? { ...p, items: [...p.items, newItem] } : p
+        )
+      };
+    }
+    
+    saveTripToCloud(updatedTrip);
+    setShowItemModal(false);
+    setEditingItem(null);
   };
 
   const removeItem = (id: string) => {
     if (!trip || !activeParticipantId) return;
-    setTrip({
+    const updatedTrip = {
       ...trip,
       participants: trip.participants.map(p => 
         p.id === activeParticipantId ? { ...p, items: p.items.filter(i => i.id !== id) } : p
       )
-    });
+    };
+    saveTripToCloud(updatedTrip);
   };
 
   const toggleStatus = (id: string, field: 'isWorn' | 'isConsumable') => {
     if (!trip || !activeParticipantId) return;
-    setTrip({
+    const updatedTrip = {
       ...trip,
       participants: trip.participants.map(p => 
         p.id === activeParticipantId ? { 
@@ -278,12 +312,13 @@ const App: React.FC = () => {
           items: p.items.map(item => item.id === id ? { ...item, [field]: !item[field] } : item) 
         } : p
       )
-    });
+    };
+    saveTripToCloud(updatedTrip);
   };
 
   const toggleCheck = (id: string) => {
     if (!trip || !activeParticipantId) return;
-    setTrip({
+    const updatedTrip = {
       ...trip,
       participants: trip.participants.map(p => 
         p.id === activeParticipantId ? { 
@@ -291,7 +326,13 @@ const App: React.FC = () => {
           items: p.items.map(item => item.id === id ? { ...item, isChecked: !item.isChecked } : item) 
         } : p
       )
-    });
+    };
+    saveTripToCloud(updatedTrip);
+  };
+
+  const openEditModal = (item: GearItem) => {
+    setEditingItem(item);
+    setShowItemModal(true);
   };
 
   const handleCreateTrip = async (e: React.FormEvent) => {
@@ -332,11 +373,14 @@ const App: React.FC = () => {
       .single();
 
     if (data) {
+      localStorage.removeItem('packwise-trip');
+      updateTripHistory(data.id, newTrip.name); 
       setTrip(newTrip);
       setActiveParticipantId(leaderId); // Use the leaderId as the active one
       setIsCreating(false);
       setIsViewOnly(false);
-      window.history.pushState({}, '', `?id=${data.id}`);
+      const newUrl = `${window.location.origin}${window.location.pathname}?id=${data.id}`;
+      window.history.replaceState({ path: newUrl }, '', newUrl);
       setTimeout(() => setShowShareModal(true), 500);
     }
   };
@@ -352,15 +396,16 @@ const App: React.FC = () => {
   const addParticipant = () => {
     if (!trip) return;
     const newId = generateUUID();
-    setTrip({
+    const updatedTrip = {
       ...trip,
       participants: [...trip.participants, {
         id: newId,
         ownerName: `${t.ownerName} ${trip.participants.length + 1}`,
         items: []
       }]
-    });
+    };
     setActiveParticipantId(newId);
+    saveTripToCloud(updatedTrip);
   };
 
   const openRenameModal = () => {
@@ -371,13 +416,13 @@ const App: React.FC = () => {
 
   const saveRename = () => {
     if (!trip || !activeParticipantId || !tempName.trim()) return;
-    
-    setTrip({
+    const updatedTrip = {
       ...trip,
       participants: trip.participants.map(p => 
         p.id === activeParticipantId ? { ...p, ownerName: tempName.trim() } : p
       )
-    });
+    };
+    saveTripToCloud(updatedTrip);
     setShowRenameModal(false);
   };
 
@@ -386,11 +431,12 @@ const App: React.FC = () => {
     const newLeader = trip.participants.find(p => p.id === participantId);
     if (!newLeader) return;
 
-    setTrip({
+    const updatedTrip = {
       ...trip,
       leaderId: newLeader.id,
       leaderName: newLeader.ownerName
-    });
+    };
+    saveTripToCloud(updatedTrip);
     setShowRenameModal(false); // Close modal if open
   };
 
@@ -608,7 +654,7 @@ const App: React.FC = () => {
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-30 px-4 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-4">
           {!isViewOnly && (
-            <button onClick={() => setTrip(null)} className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100">
+            <button onClick={() => { localStorage.removeItem('packwise-trip'); setTrip(null); setActiveTab('list'); window.history.pushState({}, '', window.location.pathname); }} className="w-11 h-11 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
               <Package className="text-white w-5 h-5" />
             </button>
           )}
@@ -635,6 +681,9 @@ const App: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+           {/* Help Button */}
+           <button onClick={() => setShowGuideModal(true)} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-2xl transition-all"><HelpCircle size={20} /></button>
+
           {/* 🇪🇺 Text-Based Language Toggle */}
           <button 
             onClick={() => setLanguage(language === 'en' ? 'sk' : 'en')}
@@ -765,7 +814,7 @@ const App: React.FC = () => {
                   </div>
                   {!isViewOnly && (
                     <button 
-                      onClick={() => setShowAddModal(true)}
+                      onClick={() => { setEditingItem(null); setShowItemModal(true); }}
                       className="bg-indigo-600 text-white px-7 py-4 rounded-[1.5rem] text-xs font-black flex items-center gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest"
                     >
                       <Plus size={18} /> {t.addItem}
@@ -779,7 +828,7 @@ const App: React.FC = () => {
                     <h3 className="text-slate-900 font-black mb-2 text-xl">{t.emptyPack}</h3>
                     <p className="text-slate-500 text-sm mb-10 font-medium px-10 leading-relaxed">{t.startAdding}</p>
                     {!isViewOnly && (
-                      <button onClick={() => setShowAddModal(true)} className="bg-slate-50 text-indigo-600 px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
+                      <button onClick={() => { setEditingItem(null); setShowItemModal(true); }} className="bg-slate-50 text-indigo-600 px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all">
                         {t.firstItem}
                       </button>
                     )}
@@ -863,6 +912,7 @@ const App: React.FC = () => {
 
                               {!isViewOnly && (
                                 <div className="flex gap-2">
+                                  <button onClick={() => openEditModal(item)} className="p-3.5 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100 hover:text-indigo-600"><Pencil size={18} /></button>
                                   <button 
                                     onClick={() => toggleStatus(item.id, 'isWorn')} 
                                     className={`p-3.5 rounded-2xl border-2 transition-all ${item.isWorn ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-300 hover:border-indigo-100 hover:text-indigo-400'}`}
@@ -985,11 +1035,52 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Add Item Modal */}
-      {showAddModal && (
+      {/* Guide Modal */}
+      {showGuideModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-500 overflow-y-auto max-h-[90vh]">
+             <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><HelpCircle size={32} /></div>
+                <h2 className="text-2xl font-black text-slate-900">{t.guideTitle}</h2>
+                <p className="text-slate-500 text-xs mt-2">{t.guideIntro}</p>
+             </div>
+             
+             <div className="space-y-6 mb-8">
+                <div>
+                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">{t.guideIcons}</h3>
+                   <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center text-slate-300"><Check size={14} strokeWidth={4} /></div>
+                         <p className="text-xs font-bold text-slate-700">{t.iconCheck}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-white border-2 border-indigo-600 text-indigo-600 flex items-center justify-center"><Tag size={14} /></div>
+                         <p className="text-xs font-bold text-slate-700">{t.iconTag}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center"><Trash2 size={14} /></div>
+                         <p className="text-xs font-bold text-slate-700">{t.iconTrash}</p>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                   <h3 className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-2">{t.guideShare}</h3>
+                   <p className="text-xs text-slate-600 leading-relaxed font-medium">{t.guideShareText}</p>
+                </div>
+             </div>
+
+             <button onClick={() => setShowGuideModal(false)} className="w-full bg-slate-900 text-white font-black py-4 rounded-[1.5rem] uppercase text-xs tracking-widest hover:bg-slate-800 transition-all">{t.close}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Item Modal */}
+      {showItemModal && (
         <AddItemModal 
-          onClose={() => setShowAddModal(false)}
-          onAdd={addItem}
+          onClose={() => setShowItemModal(false)}
+          onSave={handleSaveItem}
+          initialData={editingItem}
           language={language}
         />
       )}
@@ -1064,24 +1155,29 @@ const App: React.FC = () => {
   );
 };
 
-const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem, 'id'>) => void, language: Language }> = ({ onClose, onAdd, language }) => {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<Category>(Category.MISC);
-  const [weight, setWeight] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [price, setPrice] = useState('');
-  // 🆕 New State Variables
-  const [link, setLink] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isWorn, setIsWorn] = useState(false);
-  const [isConsumable, setIsConsumable] = useState(false);
+const AddItemModal: React.FC<{ 
+  onClose: () => void, 
+  onSave: (item: Omit<GearItem, 'id'>) => void, 
+  initialData: GearItem | null,
+  language: Language 
+}> = ({ onClose, onSave, initialData, language }) => {
+  
+  const [name, setName] = useState(initialData?.name || '');
+  const [category, setCategory] = useState<Category>(initialData?.category || Category.MISC);
+  const [weight, setWeight] = useState(initialData?.weight.toString() || '');
+  const [quantity, setQuantity] = useState(initialData?.quantity.toString() || '1');
+  const [price, setPrice] = useState(initialData?.price ? initialData.price.toString() : '');
+  const [link, setLink] = useState(initialData?.link || '');
+  const [notes, setNotes] = useState(initialData?.notes || '');
+  const [isWorn, setIsWorn] = useState(initialData?.isWorn || false);
+  const [isConsumable, setIsConsumable] = useState(initialData?.isConsumable || false);
   
   const t = translations[language];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !weight) return;
-    onAdd({
+    onSave({
       name,
       category,
       weight: parseFloat(weight),
@@ -1098,7 +1194,9 @@ const AddItemModal: React.FC<{ onClose: () => void, onAdd: (item: Omit<GearItem,
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
       <div className="bg-white w-full max-w-lg rounded-t-[3.5rem] sm:rounded-[3.5rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 max-h-[92vh] overflow-y-auto no-scrollbar">
         <div className="flex justify-between items-center mb-10">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">{t.addItem}</h2>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            {initialData ? t.editItem : t.addItem}
+          </h2>
           <button onClick={onClose} className="bg-slate-50 p-4 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all">
             <Plus size={28} className="rotate-45" />
           </button>
