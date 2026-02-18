@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import { Trip, Category } from '../types';
 import { Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, Package, Backpack, Utensils } from 'lucide-react';
 
@@ -65,7 +65,6 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
           <p className="text-sm font-black text-slate-900 mb-3 border-b border-slate-100 pb-2">{label}</p>
           <div className="space-y-1.5">
             {payload.map((entry: any, index: number) => {
-              // Only show categories that have actual weight
               if (entry.value === 0) return null;
               
               const catKey = entry.dataKey;
@@ -112,10 +111,8 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
               tick={{ fill: '#94a3b8', fontSize: 10 }} 
               unit=" kg"
             />
-            {/* 🆕 Use Custom Tooltip here */}
             <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
             
-            {/* Render Bars for all active categories */}
             {Object.values(Category).map((cat) => (
               <Bar 
                 key={cat} 
@@ -124,7 +121,31 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
                 fill={CATEGORY_CONFIG[cat].color} 
                 radius={[0, 0, 0, 0]}
                 maxBarSize={50}
-              />
+              >
+                {/* 🆕 Permanent Labels inside segments */}
+                <LabelList 
+                  dataKey={cat} 
+                  content={(props: any) => {
+                    const { x, y, width, height, value } = props;
+                    // Only show label if the segment is tall enough to fit text
+                    if (!value || height < 20) return null; 
+                    return (
+                      <text 
+                        x={x + width / 2} 
+                        y={y + height / 2} 
+                        fill="#fff" 
+                        textAnchor="middle" 
+                        dominantBaseline="middle"
+                        fontSize="9"
+                        fontWeight="900"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        {value}
+                      </text>
+                    );
+                  }}
+                />
+              </Bar>
             ))}
           </BarChart>
         </ResponsiveContainer>

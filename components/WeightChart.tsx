@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { GearItem, Category } from '../types';
 import { Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, Package, Backpack, Utensils } from 'lucide-react';
 
@@ -7,7 +7,6 @@ interface WeightChartProps {
   items: GearItem[];
 }
 
-// Configuration map to stay aligned with the rest of the app
 const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
   [Category.PACKING]:     { color: '#8b5cf6', icon: <Backpack size={14} /> },
   [Category.SHELTER]:     { color: '#6366f1', icon: <Tent size={14} /> },
@@ -18,7 +17,6 @@ const CATEGORY_CONFIG: Record<string, { color: string; icon: React.ReactNode }> 
   [Category.HYGIENE]:     { color: '#14b8a6', icon: <Droplets size={14} /> },
   [Category.MISC]:        { color: '#64748b', icon: <Package size={14} /> },
   
-  // Legacy Fallbacks
   'Cooking':              { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food':                 { color: '#f59e0b', icon: <Utensils size={14} /> },
   'Food & Gas':           { color: '#f59e0b', icon: <Utensils size={14} /> }
@@ -29,7 +27,6 @@ const WeightChart: React.FC<WeightChartProps> = ({ items }) => {
     const categoryTotals: Record<string, number> = {};
     
     items.forEach(item => {
-      // Map old data to new keys safely
       let catKey = item.category;
       if (catKey === 'Cooking' || catKey === 'Food' || catKey === 'Food & Gas') {
          catKey = Category.KITCHEN;
@@ -48,7 +45,6 @@ const WeightChart: React.FC<WeightChartProps> = ({ items }) => {
       .sort((a, b) => b.value - a.value);
   }, [items]);
 
-  // Custom Tooltip for Single Person Donut
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -85,12 +81,15 @@ const WeightChart: React.FC<WeightChartProps> = ({ items }) => {
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius="60%"
-              outerRadius="85%"
+              innerRadius="55%"
+              outerRadius="75%" // Reduced slightly to ensure labels fit on mobile
               paddingAngle={5}
               dataKey="value"
               animationBegin={0}
               animationDuration={1200}
+              labelLine={true}
+              // 🆕 Permanent label showing weight
+              label={({ value }) => `${value}kg`}
             >
               {data.map((entry, index) => (
                 <Cell 
@@ -105,7 +104,6 @@ const WeightChart: React.FC<WeightChartProps> = ({ items }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Grid Legend - Same as Group Chart */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-6 px-1 border-t border-slate-50 mt-4">
         {data.map((entry) => {
            const config = CATEGORY_CONFIG[entry.name] || CATEGORY_CONFIG[Category.MISC];
