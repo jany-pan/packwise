@@ -82,14 +82,21 @@ const WeightChart: React.FC<WeightChartProps> = ({ items }) => {
               cx="50%"
               cy="50%"
               innerRadius="55%"
-              outerRadius="75%" // Reduced slightly to ensure labels fit on mobile
+              outerRadius="72%" // Slightly smaller to ensure "kg" unit fits on mobile screens
               paddingAngle={5}
               dataKey="value"
               animationBegin={0}
               animationDuration={1200}
               labelLine={true}
-              // 🆕 Permanent label showing weight
-              label={({ value }) => `${value}kg`}
+              {/* 🆕 Permanent label with bold weight and kg unit */}
+              label={({ value }) => ({
+                fill: '#64748b',
+                fontSize: 10,
+                fontWeight: 900,
+                text: `${value} kg`
+              })}
+              {/* If your recharts version prefers a function return for labels: */}
+              {/* label={({ value }) => `${value} kg`} */}
             >
               {data.map((entry, index) => (
                 <Cell 

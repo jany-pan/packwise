@@ -122,13 +122,16 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
                 radius={[0, 0, 0, 0]}
                 maxBarSize={50}
               >
-                {/* 🆕 Permanent Labels inside segments */}
+                {/* 🆕 Permanent Labels inside segments with units */}
                 <LabelList 
                   dataKey={cat} 
                   content={(props: any) => {
                     const { x, y, width, height, value } = props;
+                    
                     // Only show label if the segment is tall enough to fit text
-                    if (!value || height < 20) return null; 
+                    // Reduced threshold slightly to show more data
+                    if (!value || height < 18) return null; 
+                    
                     return (
                       <text 
                         x={x + width / 2} 
@@ -136,11 +139,11 @@ const GroupBarChart: React.FC<GroupBarChartProps> = ({ trip }) => {
                         fill="#fff" 
                         textAnchor="middle" 
                         dominantBaseline="middle"
-                        fontSize="9"
+                        fontSize="8" // Slightly smaller to fit the unit
                         fontWeight="900"
                         style={{ pointerEvents: 'none' }}
                       >
-                        {value}
+                        {value}kg
                       </text>
                     );
                   }}
