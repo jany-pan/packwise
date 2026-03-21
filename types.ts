@@ -32,12 +32,22 @@ export interface ParticipantPack {
   items: GearItem[];
 }
 
+export interface TripResource {
+  id: string;
+  title: string;
+  url: string;
+  fileType: 'pdf' | 'image' | 'link';
+  category: 'ticket' | 'booking' | 'general'; 
+  participantId?: string;
+}
+
 export interface Trip {
   id: string;
   name: string;
   leaderName: string;
   leaderId: string;
-  routeUrl?: string;
+  routeUrl?: string; 
+  resources?: TripResource[];
   participants: ParticipantPack[];
 }
 

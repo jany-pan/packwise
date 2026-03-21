@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle } from 'lucide-react';
-import { GearItem, Category, PackStats, Language, Trip, ParticipantPack } from './types';
+import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle, FileText, Image as ImageIcon } from 'lucide-react';
+import { GearItem, Category, PackStats, Language, Trip, ParticipantPack, TripResource } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
 import WeightChart from './components/WeightChart';
@@ -62,6 +62,12 @@ const App: React.FC = () => {
 
   const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
   const [participantIdToRemove, setParticipantIdToRemove] = useState<string | null>(null);
+
+  // Upload Modal States
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState<'ticket' | 'booking' | 'general'>('general');
+  const [uploadParticipantId, setUploadParticipantId] = useState<string>('');
 
   const t = translations[language];
   
@@ -351,6 +357,62 @@ const App: React.FC = () => {
           items: p.items.map(item => item.id === id ? { ...item, isChecked: !item.isChecked } : item) 
         } : p
       )
+    };
+    saveTripToCloud(updatedTrip);
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!trip || !pendingFile) return;
+
+    const fileExt = pendingFile.name.split('.').pop();
+    const fileName = `${generateUUID()}.${fileExt}`;
+    const filePath = `${trip.id}/${fileName}`;
+
+    let resourceType: 'pdf' | 'image' | 'link' = 'pdf';
+    if (pendingFile.type.startsWith('image/')) {
+      resourceType = 'image';
+    }
+
+    const { error } = await supabase.storage
+      .from('trip-resources')
+      .upload(filePath, pendingFile);
+
+    if (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed. Make sure the 'trip-resources' bucket exists and is public.");
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('trip-resources')
+      .getPublicUrl(filePath);
+
+    const newResource: TripResource = {
+      id: generateUUID(),
+      title: pendingFile.name,
+      url: publicUrl,
+      fileType: resourceType,
+      category: uploadCategory,
+      participantId: uploadParticipantId || undefined
+    };
+
+    const updatedTrip = {
+      ...trip,
+      resources: [...(trip.resources || []), newResource]
+    };
+
+    saveTripToCloud(updatedTrip);
+    setShowUploadModal(false);
+    setPendingFile(null);
+    setUploadCategory('ticket');
+    setUploadParticipantId('');
+  };
+
+  const removeResource = (resourceId: string) => {
+    if (!trip) return;
+    const updatedTrip = {
+      ...trip,
+      resources: (trip.resources || []).filter(r => r.id !== resourceId)
     };
     saveTripToCloud(updatedTrip);
   };
@@ -776,23 +838,127 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-5 pt-8">
-        {/* Simple Reference Link Card */}
-        {trip.routeUrl && (
-          <section className="bg-white rounded-[2.5rem] p-7 mb-8 shadow-sm border border-slate-50 flex items-center justify-between group hover:border-indigo-100 transition-all">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                   <Map size={24} />
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t.routeDetails}</h4>
-                  <p className="text-sm font-black text-slate-800">Mapy.cz Track</p>
-                </div>
-             </div>
-             <a href={ensureProtocol(trip.routeUrl)} target="_blank" rel="noopener noreferrer" className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl hover:bg-indigo-600 transition-all active:scale-90">
-                <ExternalLink size={20} />
-             </a>
-          </section>
-        )}
+        {/* TRIP HUB SECTION */}
+        <section className="bg-white rounded-[2.5rem] p-7 mb-8 shadow-sm border border-slate-50">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-2">
+              <Globe size={16} className="text-indigo-600" /> Trip Hub
+            </h3>
+            {!isViewOnly && (
+              <div className="relative overflow-hidden inline-block">
+                <button className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:bg-indigo-100 transition-all">
+                  <Plus size={14} /> Add File
+                </button>
+                <input 
+                  type="file" 
+                  accept="application/pdf,image/*" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setPendingFile(file);
+                      setUploadParticipantId('');
+                      setUploadCategory('ticket');
+                      setShowUploadModal(true);
+                    }
+                    e.target.value = '';
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* TICKET SECTION */}
+          {trip.resources?.filter(r => r.category === 'ticket').length ? (
+            <div className="mb-6">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-3 flex items-center gap-2">🎫 Travel Tickets</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {trip.resources.filter(r => r.category === 'ticket').map(ticket => {
+                  const owner = trip.participants.find(p => p.id === ticket.participantId);
+                  return (
+                    <div key={ticket.id} className="bg-indigo-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg group">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        {ticket.fileType === 'image' ? (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-indigo-400 bg-white">
+                            <img src={ticket.url} alt={ticket.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shrink-0">
+                            <FileText size={18} />
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <p className="font-black text-sm truncate">{ticket.title}</p>
+                          {owner && <p className="text-[9px] font-bold text-indigo-200 mt-0.5 uppercase tracking-wider">👤 {owner.ownerName}</p>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="bg-white text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-50 transition-all">
+                          <ExternalLink size={16} />
+                        </a>
+                        {!isViewOnly && (
+                          <button onClick={() => removeResource(ticket.id)} className="p-2.5 text-indigo-200 hover:text-white hover:bg-indigo-500 rounded-xl transition-all">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {/* BOOKINGS & GENERAL SECTION */}
+          {trip.resources?.filter(r => r.category !== 'ticket').length ? (
+            <div>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">📂 Bookings & General Docs</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {trip.resources.filter(r => r.category !== 'ticket').map(resource => {
+                  const owner = trip.participants.find(p => p.id === resource.participantId);
+                  return (
+                    <div key={resource.id} className="bg-slate-50 border border-slate-100 p-3 rounded-2xl flex items-center justify-between hover:border-indigo-100 transition-all group">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        {resource.fileType === 'image' ? (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-white">
+                            <img src={resource.url} alt={resource.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+                            <FileText size={18} />
+                          </div>
+                        )}
+                        <div className="truncate">
+                          <p className="font-bold text-slate-800 text-xs truncate" title={resource.title}>{resource.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-1.5 py-0.5 rounded">{resource.category}</span>
+                            {owner && <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate">👤 {owner.ownerName}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 bg-white rounded-lg shadow-sm transition-all">
+                          <ExternalLink size={14} />
+                        </a>
+                        {!isViewOnly && (
+                          <button onClick={() => removeResource(resource.id)} className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 bg-white rounded-lg shadow-sm transition-all">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {(!trip.resources || trip.resources.length === 0) && (
+            <div className="text-center py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No documents uploaded yet</p>
+            </div>
+          )}
+        </section>
 
         {/* 🔄 NAVIGATION: Toggle between Gear and Stats Dashboard */}
         <div className="flex gap-2 mb-8 bg-slate-100/50 p-1.5 rounded-3xl sticky top-20 z-20 backdrop-blur-md">
@@ -1103,6 +1269,63 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Upload Settings Modal */}
+      {showUploadModal && pendingFile && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <h3 className="text-xl font-black text-slate-900 mb-6">File Details</h3>
+            
+            <div className="space-y-4 mb-8">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs font-bold text-slate-600 truncate">
+                📄 {pendingFile.name}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Category</label>
+                <select 
+                  value={uploadCategory} 
+                  onChange={(e) => setUploadCategory(e.target.value as any)}
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 outline-none font-bold text-slate-800 focus:border-indigo-500 transition-all appearance-none"
+                >
+                  <option value="ticket">🎫 Travel Ticket (Flight, Train, Bus)</option>
+                  <option value="booking">🏨 Booking (Hotel, Airbnb)</option>
+                  <option value="general">📂 General Document</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Assign To (Optional)</label>
+                <select 
+                  value={uploadParticipantId} 
+                  onChange={(e) => setUploadParticipantId(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 outline-none font-bold text-slate-800 focus:border-indigo-500 transition-all appearance-none"
+                >
+                  <option value="">-- Group / Unassigned --</option>
+                  {trip.participants.map(p => (
+                    <option key={p.id} value={p.id}>{p.ownerName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowUploadModal(false); setPendingFile(null); }} 
+                className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem] transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmUpload} 
+                className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200 transition-all"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share Modal */}
       {showShareModal && (
