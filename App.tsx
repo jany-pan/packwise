@@ -63,6 +63,10 @@ const App: React.FC = () => {
   const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
   const [participantIdToRemove, setParticipantIdToRemove] = useState<string | null>(null);
 
+  // Resource Delete Modal States
+  const [showDeleteResourceModal, setShowDeleteResourceModal] = useState(false);
+  const [resourceIdToRemove, setResourceIdToRemove] = useState<string | null>(null);
+
   // Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadMode, setUploadMode] = useState<'file' | 'link' | 'note'>('file');
@@ -428,13 +432,15 @@ const App: React.FC = () => {
     setUploadParticipantId('');
   };
 
-  const removeResource = (resourceId: string) => {
-    if (!trip) return;
+  const confirmRemoveResource = () => {
+    if (!trip || !resourceIdToRemove) return;
     const updatedTrip = {
       ...trip,
-      resources: (trip.resources || []).filter(r => r.id !== resourceId)
+      resources: (trip.resources || []).filter(r => r.id !== resourceIdToRemove)
     };
     saveTripToCloud(updatedTrip);
+    setShowDeleteResourceModal(false);
+    setResourceIdToRemove(null);
   };
 
   const openEditModal = (item: GearItem) => {
@@ -912,7 +918,10 @@ const App: React.FC = () => {
                           <ExternalLink size={16} />
                         </a>
                         {!isViewOnly && (
-                          <button onClick={() => removeResource(ticket.id)} className="p-2.5 text-indigo-200 hover:text-white hover:bg-indigo-500 rounded-xl transition-all">
+                          <button 
+                            onClick={() => { setResourceIdToRemove(ticket.id); setShowDeleteResourceModal(true); }} 
+                            className="p-2.5 text-indigo-200 hover:text-white hover:bg-indigo-500 rounded-xl transition-all"
+                          >
                             <Trash2 size={16} />
                           </button>
                         )}
@@ -956,7 +965,10 @@ const App: React.FC = () => {
                           <ExternalLink size={14} />
                         </a>
                         {!isViewOnly && (
-                          <button onClick={() => removeResource(resource.id)} className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 bg-white rounded-lg shadow-sm transition-all">
+                          <button 
+                            onClick={() => { setResourceIdToRemove(resource.id); setShowDeleteResourceModal(true); }} 
+                            className="p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 bg-white rounded-lg shadow-sm transition-all"
+                          >
                             <Trash2 size={14} />
                           </button>
                         )}
@@ -1553,6 +1565,33 @@ const App: React.FC = () => {
                 className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200"
               >
                 {t.delete}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE RESOURCE CONFIRM MODAL */}
+      {showDeleteResourceModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300 text-center">
+            <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Delete Resource?</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">This action cannot be undone. The file or link will be permanently removed from this trip.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowDeleteResourceModal(false); setResourceIdToRemove(null); }} 
+                className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem] transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmRemoveResource} 
+                className="flex-1 py-4 bg-rose-500 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-rose-200 transition-all"
+              >
+                Delete
               </button>
             </div>
           </div>
