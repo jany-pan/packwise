@@ -36,7 +36,7 @@ export interface TripResource {
   id: string;
   title: string;
   url: string;
-  fileType: 'pdf' | 'image' | 'link';
+  fileType: 'pdf' | 'image' | 'link' | 'note';
   category: 'ticket' | 'booking' | 'general'; 
   participantId?: string;
 }

@@ -65,7 +65,11 @@ const App: React.FC = () => {
 
   // Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'file' | 'link' | 'note'>('file');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadUrl, setUploadUrl] = useState('');
+  const [uploadContent, setUploadContent] = useState('');
   const [uploadCategory, setUploadCategory] = useState<'ticket' | 'booking' | 'general'>('general');
   const [uploadParticipantId, setUploadParticipantId] = useState<string>('');
 
@@ -362,35 +366,46 @@ const App: React.FC = () => {
   };
 
   const handleConfirmUpload = async () => {
-    if (!trip || !pendingFile) return;
+    if (!trip) return;
 
-    const fileExt = pendingFile.name.split('.').pop();
-    const fileName = `${generateUUID()}.${fileExt}`;
-    const filePath = `${trip.id}/${fileName}`;
+    // Validation
+    if (uploadMode === 'file' && !pendingFile) return alert("Please select a file");
+    if (uploadMode === 'link' && (!uploadTitle || !uploadUrl)) return alert("Please enter title and URL");
+    if (uploadMode === 'note' && (!uploadTitle || !uploadContent)) return alert("Please enter title and note content");
 
-    let resourceType: 'pdf' | 'image' | 'link' = 'pdf';
-    if (pendingFile.type.startsWith('image/')) {
-      resourceType = 'image';
+    let finalUrl = uploadUrl;
+    let resourceType: 'pdf' | 'image' | 'link' | 'note' = uploadMode as any;
+
+    // Only hit Supabase if it's a file/image
+    if (uploadMode === 'file' && pendingFile) {
+      const fileExt = pendingFile.name.split('.').pop();
+      const fileName = `${generateUUID()}.${fileExt}`;
+      const filePath = `${trip.id}/${fileName}`;
+
+      resourceType = pendingFile.type.startsWith('image/') ? 'image' : 'pdf';
+
+      const { error } = await supabase.storage
+        .from('trip-resources')
+        .upload(filePath, pendingFile);
+
+      if (error) {
+        console.error("Upload failed:", error);
+        alert("Upload failed. Make sure the 'trip-resources' bucket exists and is public.");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('trip-resources')
+        .getPublicUrl(filePath);
+        
+      finalUrl = publicUrl;
     }
-
-    const { error } = await supabase.storage
-      .from('trip-resources')
-      .upload(filePath, pendingFile);
-
-    if (error) {
-      console.error("Upload failed:", error);
-      alert("Upload failed. Make sure the 'trip-resources' bucket exists and is public.");
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('trip-resources')
-      .getPublicUrl(filePath);
 
     const newResource: TripResource = {
       id: generateUUID(),
-      title: pendingFile.name,
-      url: publicUrl,
+      title: uploadMode === 'file' ? (pendingFile?.name || 'File') : uploadTitle,
+      url: uploadMode === 'note' ? undefined : finalUrl,
+      content: uploadMode === 'note' ? uploadContent : undefined,
       fileType: resourceType,
       category: uploadCategory,
       participantId: uploadParticipantId || undefined
@@ -402,9 +417,14 @@ const App: React.FC = () => {
     };
 
     saveTripToCloud(updatedTrip);
+    
+    // Reset Modal
     setShowUploadModal(false);
     setPendingFile(null);
-    setUploadCategory('ticket');
+    setUploadTitle('');
+    setUploadUrl('');
+    setUploadContent('');
+    setUploadCategory('general');
     setUploadParticipantId('');
   };
 
@@ -845,26 +865,21 @@ const App: React.FC = () => {
               <Globe size={16} className="text-indigo-600" /> Trip Hub
             </h3>
             {!isViewOnly && (
-              <div className="relative overflow-hidden inline-block">
-                <button className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:bg-indigo-100 transition-all">
-                  <Plus size={14} /> Add File
-                </button>
-                <input 
-                  type="file" 
-                  accept="application/pdf,image/*" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setPendingFile(file);
-                      setUploadParticipantId('');
-                      setUploadCategory('ticket');
-                      setShowUploadModal(true);
-                    }
-                    e.target.value = '';
-                  }}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              </div>
+              <button 
+                onClick={() => {
+                  setPendingFile(null);
+                  setUploadTitle('');
+                  setUploadUrl('');
+                  setUploadContent('');
+                  setUploadMode('file');
+                  setUploadParticipantId('');
+                  setUploadCategory('general');
+                  setShowUploadModal(true);
+                }}
+                className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:bg-indigo-100 transition-all active:scale-95"
+              >
+                <Plus size={14} /> Add Resource
+              </button>
             )}
           </div>
 
@@ -1270,18 +1285,94 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Upload Settings Modal */}
-      {showUploadModal && pendingFile && (
+      {/* Universal Upload Settings Modal */}
+      {showUploadModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
-            <h3 className="text-xl font-black text-slate-900 mb-6">File Details</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-6">Add Resource</h3>
             
-            <div className="space-y-4 mb-8">
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs font-bold text-slate-600 truncate">
-                📄 {pendingFile.name}
-              </div>
+            {/* Mode Selection Tabs */}
+            <div className="flex gap-2 mb-6 bg-slate-50 p-1.5 rounded-2xl">
+               <button onClick={() => setUploadMode('file')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${uploadMode === 'file' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}>File</button>
+               <button onClick={() => setUploadMode('link')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${uploadMode === 'link' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}>Link</button>
+               <button onClick={() => setUploadMode('note')} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${uploadMode === 'note' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400'}`}>Note</button>
+            </div>
 
-              <div className="space-y-2">
+            <div className="space-y-4 mb-8">
+              
+              {/* FILE MODE */}
+              {uploadMode === 'file' && (
+                <div 
+                  className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl p-6 text-center relative hover:border-indigo-300 hover:bg-indigo-50/30 transition-all outline-none"
+                  tabIndex={0}
+                  onPaste={(e) => {
+                    const items = e.clipboardData.items;
+                    for (let i = 0; i < items.length; i++) {
+                      if (items[i].type.indexOf('image') !== -1) {
+                        const blob = items[i].getAsFile();
+                        if (blob) setPendingFile(blob);
+                      }
+                    }
+                  }}
+                >
+                  <input 
+                    type="file" 
+                    accept="application/pdf,image/*"
+                    onChange={(e) => e.target.files?.[0] && setPendingFile(e.target.files[0])}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  {pendingFile ? (
+                    <p className="text-xs font-bold text-indigo-600 truncate">📄 {pendingFile.name}</p>
+                  ) : (
+                    <div>
+                       <ImageIcon size={24} className="mx-auto text-slate-300 mb-2" />
+                       <p className="text-xs font-bold text-slate-600">Click to browse or drop file</p>
+                       <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">or Paste (CTRL+V) an image</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* LINK & NOTE MODES: Require Title */}
+              {(uploadMode === 'link' || uploadMode === 'note') && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Title</label>
+                  <input 
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                    placeholder={uploadMode === 'link' ? "e.g., Airbnb Reservation" : "e.g., Gate Code"}
+                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 outline-none font-bold text-slate-800 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+              )}
+
+              {uploadMode === 'link' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">URL</label>
+                  <input 
+                    value={uploadUrl}
+                    onChange={(e) => setUploadUrl(e.target.value)}
+                    placeholder="https://"
+                    type="url"
+                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 outline-none font-bold text-slate-800 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+              )}
+
+              {uploadMode === 'note' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Details</label>
+                  <textarea 
+                    value={uploadContent}
+                    onChange={(e) => setUploadContent(e.target.value)}
+                    placeholder="Enter codes, instructions, or notes here..."
+                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3 outline-none font-medium text-slate-800 focus:border-indigo-500 transition-all min-h-[100px] resize-none"
+                  />
+                </div>
+              )}
+
+              {/* CATEGORY & ASSIGNMENT (Shared for all modes) */}
+              <div className="space-y-2 pt-2 border-t border-slate-50">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Category</label>
                 <select 
                   value={uploadCategory} 
@@ -1290,7 +1381,7 @@ const App: React.FC = () => {
                 >
                   <option value="ticket">🎫 Travel Ticket (Flight, Train, Bus)</option>
                   <option value="booking">🏨 Booking (Hotel, Airbnb)</option>
-                  <option value="general">📂 General Document</option>
+                  <option value="general">📂 General / Map / Note</option>
                 </select>
               </div>
 
@@ -1310,17 +1401,11 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex gap-3">
-              <button 
-                onClick={() => { setShowUploadModal(false); setPendingFile(null); }} 
-                className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem] transition-all"
-              >
+              <button onClick={() => setShowUploadModal(false)} className="flex-1 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-[1.5rem] transition-all">
                 Cancel
               </button>
-              <button 
-                onClick={handleConfirmUpload} 
-                className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200 transition-all"
-              >
-                Upload
+              <button onClick={handleConfirmUpload} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200 transition-all">
+                Save
               </button>
             </div>
           </div>
