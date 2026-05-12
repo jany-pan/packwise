@@ -67,9 +67,10 @@ const App: React.FC = () => {
   const [showDeleteResourceModal, setShowDeleteResourceModal] = useState(false);
   const [resourceIdToRemove, setResourceIdToRemove] = useState<string | null>(null);
 
-  // Upload Modal States
+// Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadMode, setUploadMode] = useState<'file' | 'link' | 'note'>('file');
+  const [viewNote, setViewNote] = useState<TripResource | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadUrl, setUploadUrl] = useState('');
@@ -914,9 +915,15 @@ const App: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="bg-white text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-50 transition-all">
-                          <ExternalLink size={16} />
-                        </a>
+                        {ticket.fileType === 'note' ? (
+                          <button onClick={() => setViewNote(ticket)} className="bg-white text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-50 transition-all">
+                            <StickyNote size={16} />
+                          </button>
+                        ) : (
+                          <a href={ticket.url} target="_blank" rel="noopener noreferrer" className="bg-white text-indigo-600 p-2.5 rounded-xl hover:bg-indigo-50 transition-all">
+                            <ExternalLink size={16} />
+                          </a>
+                        )}
                         {!isViewOnly && (
                           <button 
                             onClick={() => { setResourceIdToRemove(ticket.id); setShowDeleteResourceModal(true); }} 
@@ -961,9 +968,15 @@ const App: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 bg-white rounded-lg shadow-sm transition-all">
-                          <ExternalLink size={14} />
-                        </a>
+                        {resource.fileType === 'note' ? (
+                          <button onClick={() => setViewNote(resource)} className="p-2 text-slate-400 hover:text-indigo-600 bg-white rounded-lg shadow-sm transition-all">
+                            <StickyNote size={14} />
+                          </button>
+                        ) : (
+                          <a href={resource.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 bg-white rounded-lg shadow-sm transition-all">
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
                         {!isViewOnly && (
                           <button 
                             onClick={() => { setResourceIdToRemove(resource.id); setShowDeleteResourceModal(true); }} 
@@ -1419,6 +1432,34 @@ const App: React.FC = () => {
               <button onClick={handleConfirmUpload} className="flex-1 py-4 bg-indigo-600 text-white font-black uppercase text-[10px] tracking-widest rounded-[1.5rem] shadow-lg shadow-indigo-200 transition-all">
                 Save
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW NOTE MODAL */}
+      {viewNote && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                  <StickyNote size={20} />
+                </div>
+                {viewNote.title}
+              </h3>
+              <button 
+                onClick={() => setViewNote(null)} 
+                className="p-2 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl max-h-[60vh] overflow-y-auto">
+              <p className="whitespace-pre-wrap text-sm font-medium text-slate-700 leading-relaxed">
+                {viewNote.content}
+              </p>
             </div>
           </div>
         </div>
