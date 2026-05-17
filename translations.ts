@@ -104,6 +104,13 @@ export const translations = {
     addPart: 'Add Part',
     splitAction: 'Split Item',
     weightError: 'Remaining weight must be 0g',
+    exportCsv: 'Export CSV',
+    importCsv: 'Import CSV',
+    mapColumns: 'Map columns manually',
+    appendMode: 'Append to list',
+    replaceMode: 'Replace entire list',
+    importAction: 'Import Gear',
+    selectColumn: '-- Select Column --',
   },
   sk: {
     appName: 'PackWise',
@@ -207,5 +214,12 @@ export const translations = {
     addPart: 'Pridať časť',
     splitAction: 'Rozdeliť',
     weightError: 'Zostávajúca váha musí byť 0g',
+    exportCsv: 'Exportovať CSV',
+    importCsv: 'Importovať CSV',
+    mapColumns: 'Mapovať stĺpce manuálne',
+    appendMode: 'Pridať k zoznamu',
+    replaceMode: 'Nahradiť celý zoznam',
+    importAction: 'Importovať výbavu',
+    selectColumn: '-- Vybrať stĺpec --',
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle, FileText, Image as ImageIcon, Scissors, RotateCcw } from 'lucide-react';
+import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, Upload, AlertTriangle, HelpCircle, FileText, Image as ImageIcon, Scissors, RotateCcw } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack, TripResource } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -70,6 +70,9 @@ const App: React.FC = () => {
 // Split Modal States
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [itemToSplit, setItemToSplit] = useState<{item: GearItem, ownerId: string} | null>(null);
+
+  // Import Modal States
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -333,6 +336,49 @@ const App: React.FC = () => {
     saveTripToCloud(updatedTrip);
     setShowItemModal(false);
     setEditingItem(null);
+  };
+
+  const handleExportCSV = () => {
+    if (!activeParticipant) return;
+    const headers = ['Name', 'Category', 'Weight (g)', 'Price (€)', 'Quantity', 'Worn', 'Consumable', 'Link', 'Notes'];
+    const rows = activeParticipant.items.map(item => [
+      `"${item.name.replace(/"/g, '""')}"`,
+      `"${item.category}"`,
+      item.weight,
+      item.price,
+      item.quantity,
+      item.isWorn ? 'Yes' : 'No',
+      item.isConsumable ? 'Yes' : 'No',
+      `"${(item.link || '').replace(/"/g, '""')}"`,
+      `"${(item.notes || '').replace(/"/g, '""')}"`
+    ].join(','));
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${activeParticipant.ownerName}_Gear.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const executeImportCSV = (newItems: Omit<GearItem, 'id'>[], mode: 'append' | 'replace') => {
+    if (!trip || !activeParticipantId) return;
+    
+    const itemsWithIds = newItems.map(item => ({ ...item, id: generateUUID(), isChecked: false }));
+    
+    const updatedTrip = {
+      ...trip,
+      participants: trip.participants.map(p => 
+        p.id === activeParticipantId 
+          ? { ...p, items: mode === 'replace' ? itemsWithIds : [...p.items, ...itemsWithIds] } 
+          : p
+      )
+    };
+    saveTripToCloud(updatedTrip);
+    setShowImportModal(false);
   };
 
   const removeItem = (id: string) => {
@@ -1177,13 +1223,29 @@ const App: React.FC = () => {
                   </div>
                   
                   {!isViewOnly && (
-                    <button 
-                      onClick={() => { setEditingItem(null); setShowItemModal(true); }}
-                      className="bg-indigo-600 text-white px-4 py-3 sm:px-7 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black flex items-center gap-1.5 sm:gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest shrink-0"
-                    >
-                      <Plus size={14} className="sm:w-[18px] sm:h-[18px]" /> 
-                      <span>{t.addItem}</span>
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={handleExportCSV}
+                        className="bg-white border-2 border-slate-100 text-slate-500 p-3 sm:p-4 rounded-xl sm:rounded-[1.5rem] hover:bg-slate-50 hover:text-indigo-600 transition-all"
+                        title={t.exportCsv}
+                      >
+                        <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+                      </button>
+                      <button 
+                        onClick={() => setShowImportModal(true)}
+                        className="bg-white border-2 border-slate-100 text-slate-500 p-3 sm:p-4 rounded-xl sm:rounded-[1.5rem] hover:bg-slate-50 hover:text-indigo-600 transition-all"
+                        title={t.importCsv}
+                      >
+                        <Upload size={16} className="sm:w-[18px] sm:h-[18px]" />
+                      </button>
+                      <button 
+                        onClick={() => { setEditingItem(null); setShowItemModal(true); }}
+                        className="bg-indigo-600 text-white px-4 py-3 sm:px-7 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black flex items-center gap-1.5 sm:gap-2 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest shrink-0 border-2 border-indigo-600"
+                      >
+                        <Plus size={14} className="sm:w-[18px] sm:h-[18px]" /> 
+                        <span>{t.addItem}</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1668,6 +1730,15 @@ const App: React.FC = () => {
         />
       )}
 
+      {/* Import CSV Modal */}
+      {showImportModal && (
+        <ImportCSVModal 
+          onClose={() => setShowImportModal(false)}
+          onImport={executeImportCSV}
+          language={language}
+        />
+      )}
+
       {/* Split Item Modal */}
       {showSplitModal && itemToSplit && trip && (
         <SplitItemModal 
@@ -1800,6 +1871,195 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const parseCSV = (str: string) => {
+  const arr: string[][] = [];
+  let quote = false;
+  for (let row = 0, col = 0, c = 0; c < str.length; c++) {
+    let cc = str[c], nc = str[c+1];
+    arr[row] = arr[row] || [];
+    arr[row][col] = arr[row][col] || '';
+    if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
+    if (cc == '"') { quote = !quote; continue; }
+    if (cc == ',' && !quote) { ++col; continue; }
+    if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
+    if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+    if (cc == '\r' && !quote) { ++row; col = 0; continue; }
+    arr[row][col] += cc;
+  }
+  return arr;
+};
+
+const ImportCSVModal: React.FC<{
+  onClose: () => void,
+  onImport: (items: Omit<GearItem, 'id'>[], mode: 'append' | 'replace') => void,
+  language: Language
+}> = ({ onClose, onImport, language }) => {
+  const t = (translations as any)[language];
+  const [mode, setMode] = useState<'append' | 'replace'>('append');
+  const [manualMap, setManualMap] = useState(false);
+  const [csvData, setCsvData] = useState<string[][]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mapping, setMapping] = useState<Record<string, number>>({});
+  const [fileName, setFileName] = useState<string>('');
+
+  const EXPECTED_FIELDS = [
+    { key: 'name', label: 'Name (Required)' },
+    { key: 'category', label: 'Category' },
+    { key: 'weight', label: 'Weight in g (Required)' },
+    { key: 'price', label: 'Price' },
+    { key: 'quantity', label: 'Quantity' },
+    { key: 'isWorn', label: 'Worn (Yes/No)' },
+    { key: 'isConsumable', label: 'Consumable (Yes/No)' },
+    { key: 'link', label: 'Link' },
+    { key: 'notes', label: 'Notes' }
+  ];
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      const parsed = parseCSV(text);
+      if (parsed.length > 0) {
+        setHeaders(parsed[0]);
+        setCsvData(parsed.slice(1));
+        
+        const map: Record<string, number> = {};
+        parsed[0].forEach((h, i) => {
+          const l = h.toLowerCase().trim();
+          if (l.includes('name') || l.includes('item')) map['name'] = i;
+          else if (l.includes('category') || l.includes('type')) map['category'] = i;
+          else if (l.includes('weight') || l.includes('mass')) map['weight'] = i;
+          else if (l.includes('price') || l.includes('cost')) map['price'] = i;
+          else if (l.includes('qty') || l.includes('quantity')) map['quantity'] = i;
+          else if (l.includes('worn') || l.includes('on person')) map['isWorn'] = i;
+          else if (l.includes('consumable')) map['isConsumable'] = i;
+          else if (l.includes('link') || l.includes('url')) map['link'] = i;
+          else if (l.includes('note') || l.includes('desc')) map['notes'] = i;
+        });
+        setMapping(map);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImport = () => {
+    if (mapping['name'] === undefined || mapping['weight'] === undefined) return;
+    
+    const items = csvData.filter(row => row.length > 1 && row[mapping['name']]).map(row => {
+      const rawCat = mapping['category'] !== undefined ? row[mapping['category']] : '';
+      const catMatches = Object.values(Category).find(c => c.toLowerCase() === rawCat?.trim().toLowerCase());
+      
+      const rawWorn = mapping['isWorn'] !== undefined ? row[mapping['isWorn']]?.toLowerCase() : '';
+      const rawCons = mapping['isConsumable'] !== undefined ? row[mapping['isConsumable']]?.toLowerCase() : '';
+
+      return {
+        name: row[mapping['name']],
+        category: catMatches ? (catMatches as Category) : Category.MISC,
+        weight: parseFloat(row[mapping['weight']]) || 0,
+        price: mapping['price'] !== undefined ? (parseFloat(row[mapping['price']]) || 0) : 0,
+        quantity: mapping['quantity'] !== undefined ? (parseInt(row[mapping['quantity']]) || 1) : 1,
+        isWorn: rawWorn === 'yes' || rawWorn === 'true' || rawWorn === '1',
+        isConsumable: rawCons === 'yes' || rawCons === 'true' || rawCons === '1',
+        link: mapping['link'] !== undefined ? row[mapping['link']] : '',
+        notes: mapping['notes'] !== undefined ? row[mapping['notes']] : '',
+        isChecked: false
+      };
+    });
+    
+    onImport(items, mode);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-10 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-6 shrink-0">
+          <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+             <Upload className="text-indigo-600" /> {t.importCsv || 'Import CSV'}
+          </h2>
+          <button onClick={onClose} className="bg-slate-50 p-3 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto no-scrollbar flex-1 space-y-6 pb-6">
+          {/* File Picker */}
+          <div className="relative border-2 border-dashed border-slate-200 rounded-[1.5rem] p-6 text-center hover:border-indigo-400 transition-all bg-slate-50">
+            <input type="file" accept=".csv" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+            <Upload size={24} className="mx-auto text-slate-300 mb-2" />
+            <p className="text-xs font-bold text-slate-700">{fileName || 'Click or drag CSV file here'}</p>
+          </div>
+
+          {headers.length > 0 && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Conflict Mode */}
+              <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                  <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} className="text-indigo-600 focus:ring-indigo-500" />
+                  {t.appendMode || 'Append'}
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                  <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} className="text-rose-500 focus:ring-rose-500" />
+                  {t.replaceMode || 'Replace'}
+                </label>
+              </div>
+
+              {/* Manual Map Toggle */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" checked={manualMap} onChange={e => setManualMap(e.target.checked)} className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500" />
+                <span className="text-xs font-black text-slate-700 uppercase tracking-widest">{t.mapColumns || 'Map columns manually'}</span>
+              </label>
+
+              {/* Mapping UI */}
+              {manualMap && (
+                <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                  {EXPECTED_FIELDS.map(field => (
+                    <div key={field.key} className="flex items-center justify-between gap-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 w-1/3">{field.label}</span>
+                      <select
+                        value={mapping[field.key] !== undefined ? mapping[field.key] : ''}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setMapping(prev => {
+                            const newMap = { ...prev };
+                            if (val === '') delete newMap[field.key];
+                            else newMap[field.key] = parseInt(val);
+                            return newMap;
+                          });
+                        }}
+                        className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-indigo-500"
+                      >
+                        <option value="">{t.selectColumn || '-- Ignore --'}</option>
+                        {headers.map((h, i) => <option key={i} value={i}>{h}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="shrink-0 pt-4 border-t border-slate-100">
+          <button 
+            onClick={handleImport}
+            disabled={!fileName || mapping['name'] === undefined || mapping['weight'] === undefined}
+            className={`w-full font-black py-5 rounded-[1.5rem] tracking-[0.2em] text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${
+              fileName && mapping['name'] !== undefined && mapping['weight'] !== undefined
+                ? 'bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 active:scale-95' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {t.importAction || 'Import Gear'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
