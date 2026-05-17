@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, Upload, AlertTriangle, HelpCircle, FileText, Image as ImageIcon, Scissors, RotateCcw } from 'lucide-react';
+import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, Upload, AlertTriangle, HelpCircle, FileText, Image as ImageIcon, Scissors, RotateCcw, Cloud, CloudOff, CloudAlert } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack, TripResource } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -73,6 +73,9 @@ const App: React.FC = () => {
 
   // Import Modal States
   const [showImportModal, setShowImportModal] = useState(false);
+  
+  // Sync Status
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'offline' | 'error'>('synced');
 
   // Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -115,7 +118,15 @@ const App: React.FC = () => {
     const tripId = params.get('id');
 
     if (tripId) {
-       await supabase.from('trips').update({ trip_data: updatedTrip }).eq('id', tripId);
+       const { error } = await supabase.from('trips').update({ trip_data: updatedTrip }).eq('id', tripId);
+       if (error) {
+         console.error("Cloud save failed:", error);
+         setSyncStatus('error');
+       } else {
+         setSyncStatus('synced');
+       }
+    } else {
+       setSyncStatus('offline');
     }
   };
 
@@ -181,7 +192,16 @@ const App: React.FC = () => {
     if (savedTrip) {
       try {
         const parsed = JSON.parse(savedTrip);
+        
+        // AUTO-REDIRECT FIX: If the local backup has an ID but the URL doesn't, force a redirect to the cloud trip
+        if (parsed.id) {
+          const newUrl = `${window.location.origin}${window.location.pathname}?id=${parsed.id}`;
+          window.location.replace(newUrl);
+          return; // Stop local execution and wait for reload
+        }
+
         setTrip(parsed);
+        setSyncStatus('offline');
         if (parsed.participants && parsed.participants.length > 0) {
            setActiveParticipantId(parsed.participants[0].id);
         }
@@ -952,6 +972,21 @@ const App: React.FC = () => {
         
         {/* Right Side: Actions (Super Compact Mobile) */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+           
+           {/* SYNC STATUS BADGE */}
+           {trip && (
+             <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
+               syncStatus === 'synced' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+               syncStatus === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse' :
+               'bg-amber-50 text-amber-600 border-amber-100'
+             }`}>
+               {syncStatus === 'synced' && <Cloud size={14} />}
+               {syncStatus === 'error' && <CloudAlert size={14} />}
+               {syncStatus === 'offline' && <CloudOff size={14} />}
+               <span>{syncStatus}</span>
+             </div>
+           )}
+
            {/* Help Button */}
            <button onClick={() => setShowGuideModal(true)} className="p-1.5 sm:p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 bg-slate-50 rounded-lg sm:rounded-2xl transition-all">
              <HelpCircle size={16} className="sm:w-5 sm:h-5" />
