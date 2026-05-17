@@ -975,14 +975,14 @@ const App: React.FC = () => {
            
            {/* SYNC STATUS BADGE */}
            {trip && (
-             <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${
+             <div className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${
                syncStatus === 'synced' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                syncStatus === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse' :
                'bg-amber-50 text-amber-600 border-amber-100'
              }`}>
-               {syncStatus === 'synced' && <Cloud size={14} />}
-               {syncStatus === 'error' && <CloudAlert size={14} />}
-               {syncStatus === 'offline' && <CloudOff size={14} />}
+               {syncStatus === 'synced' && <Cloud size={12} className="sm:w-[14px] sm:h-[14px]" />}
+               {syncStatus === 'error' && <CloudAlert size={12} className="sm:w-[14px] sm:h-[14px]" />}
+               {syncStatus === 'offline' && <CloudOff size={12} className="sm:w-[14px] sm:h-[14px]" />}
                <span>{syncStatus}</span>
              </div>
            )}
