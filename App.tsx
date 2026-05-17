@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle, FileText, Image as ImageIcon } from 'lucide-react';
+import { Link as LinkIcon, Backpack, UserMinus, StickyNote, ExternalLink, Plus, Trash2, PieChart, Sparkles, Package, Tag, Weight, Euro, Share2, Globe, User, ChevronLeft, Copy, Check, Pencil, Crown, Users, Scale, Utensils, Mountain, Map, Info, Clock, ArrowUpRight, Search, Tent, Moon, Shirt, Flame, Smartphone, Droplets, Apple, RefreshCw, X, UserPlus, Save, Download, AlertTriangle, HelpCircle, FileText, Image as ImageIcon, Scissors, RotateCcw } from 'lucide-react';
 import { GearItem, Category, PackStats, Language, Trip, ParticipantPack, TripResource } from './types';
 import { supabase } from './services/supabase';
 import { translations } from './translations';
@@ -67,7 +67,11 @@ const App: React.FC = () => {
   const [showDeleteResourceModal, setShowDeleteResourceModal] = useState(false);
   const [resourceIdToRemove, setResourceIdToRemove] = useState<string | null>(null);
 
-// Upload Modal States
+// Split Modal States
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [itemToSplit, setItemToSplit] = useState<{item: GearItem, ownerId: string} | null>(null);
+
+  // Upload Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadMode, setUploadMode] = useState<'file' | 'link' | 'note'>('file');
   const [viewNote, setViewNote] = useState<TripResource | null>(null);
@@ -339,6 +343,85 @@ const App: React.FC = () => {
         p.id === activeParticipantId ? { ...p, items: p.items.filter(i => i.id !== id) } : p
       )
     };
+    saveTripToCloud(updatedTrip);
+  };
+
+  const handleSplitItem = (parts: {name: string, weight: number, assigneeId: string}[]) => {
+    if (!trip || !itemToSplit) return;
+    const { item, ownerId } = itemToSplit;
+    const groupId = generateUUID();
+    const originalItemRaw = JSON.stringify(item);
+    
+    let updatedTrip = { ...trip };
+    
+    // Remove original item
+    updatedTrip.participants = updatedTrip.participants.map(p => 
+      p.id === ownerId ? { ...p, items: p.items.filter(i => i.id !== item.id) } : p
+    );
+
+    let priceAssigned = false;
+    const ownerHasPart = parts.some(p => p.assigneeId === ownerId);
+    
+    parts.forEach((part, index) => {
+      let partPrice = 0;
+      // Intelligently assign the full original price to the original owner's piece
+      if (ownerHasPart) {
+        if (part.assigneeId === ownerId && !priceAssigned) {
+          partPrice = item.price * item.quantity;
+          priceAssigned = true;
+        }
+      } else {
+        if (index === 0) {
+          partPrice = item.price * item.quantity;
+        }
+      }
+
+      const newItem: GearItem = {
+        id: generateUUID(),
+        name: part.name,
+        category: item.category,
+        weight: part.weight,
+        price: partPrice,
+        quantity: 1,
+        isWorn: item.isWorn,
+        isConsumable: item.isConsumable,
+        link: item.link,
+        notes: item.notes,
+        splitData: {
+          groupId,
+          originalOwnerId: ownerId,
+          originalItemName: item.name,
+          originalItemPrice: item.price * item.quantity,
+          originalItemRaw
+        }
+      };
+      
+      updatedTrip.participants = updatedTrip.participants.map(p => 
+        p.id === part.assigneeId ? { ...p, items: [...p.items, newItem] } : p
+      );
+    });
+
+    saveTripToCloud(updatedTrip);
+    setShowSplitModal(false);
+    setItemToSplit(null);
+  };
+
+  const revertSplit = (groupId: string, originalItemRaw: string, originalOwnerId: string) => {
+    if (!trip) return;
+    let updatedTrip = { ...trip };
+    
+    // 1. Remove all items with this groupId from all participants
+    updatedTrip.participants = updatedTrip.participants.map(p => ({
+      ...p,
+      items: p.items.filter(i => i.splitData?.groupId !== groupId)
+    }));
+    
+    // 2. Re-add the original item to the original owner
+    const originalItem: GearItem = JSON.parse(originalItemRaw);
+    updatedTrip.participants = updatedTrip.participants.map(p => 
+      p.id === originalOwnerId ? { ...p, items: [...p.items, originalItem] } : p
+    );
+    
     saveTripToCloud(updatedTrip);
   };
 
@@ -1181,6 +1264,25 @@ const App: React.FC = () => {
                                   </div>
                                 )}
                                 
+                                {/* Split Data Badge */}
+                                {item.splitData && (
+                                  <div className="flex flex-col gap-0.5 sm:gap-1 mb-1.5 sm:mb-2 bg-indigo-50/70 p-2 sm:p-2.5 rounded-xl border border-indigo-100/50 w-fit pr-4">
+                                    <p className="text-[9px] sm:text-[10px] text-indigo-800 font-black uppercase tracking-widest flex items-center gap-1.5">
+                                      <Scissors size={10} className="shrink-0 text-indigo-500" /> {t.originalItem}: {item.splitData.originalItemName}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-0.5">
+                                       <p className="text-[9px] sm:text-[10px] text-indigo-600 font-bold flex items-center gap-1 truncate">
+                                         <User size={10} className="shrink-0" /> {trip.participants.find(p => p.id === item.splitData?.originalOwnerId)?.ownerName || t.originalOwner}
+                                       </p>
+                                       {item.splitData.originalItemPrice > 0 && (
+                                         <p className="text-[9px] sm:text-[10px] text-emerald-600 font-black shrink-0">
+                                           €{item.splitData.originalItemPrice}
+                                         </p>
+                                       )}
+                                    </div>
+                                  </div>
+                                )}
+
                                 <div className="flex items-center gap-3 sm:gap-5">
                                     <div className="flex items-center gap-1 text-indigo-600 font-black text-[10px] sm:text-[11px] uppercase">
                                         <Scale size={12} className="opacity-50 sm:w-[14px] sm:h-[14px]" />
@@ -1195,6 +1297,16 @@ const App: React.FC = () => {
 
                               {!isViewOnly && (
                                 <div className="flex gap-1 sm:gap-2">
+                                  {!item.splitData && (
+                                    <button onClick={() => { setItemToSplit({item, ownerId: activeParticipantId!}); setShowSplitModal(true); }} className="p-2 sm:p-3.5 text-indigo-400 hover:bg-indigo-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100 hover:text-indigo-600" title={t.splitItem}>
+                                      <Scissors size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                    </button>
+                                  )}
+                                  {item.splitData && (
+                                    <button onClick={() => revertSplit(item.splitData!.groupId, item.splitData!.originalItemRaw, item.splitData!.originalOwnerId)} className="p-2 sm:p-3.5 text-amber-500 hover:bg-amber-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent hover:border-amber-100" title={t.revertSplit}>
+                                      <RotateCcw size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                    </button>
+                                  )}
                                   <button onClick={() => openEditModal(item)} className="p-2 sm:p-3.5 text-slate-400 hover:bg-slate-50 rounded-xl sm:rounded-2xl transition-all border-2 border-transparent hover:border-indigo-100 hover:text-indigo-600">
                                     <Pencil size={16} className="sm:w-[18px] sm:h-[18px]" />
                                   </button>
@@ -1556,6 +1668,18 @@ const App: React.FC = () => {
         />
       )}
 
+      {/* Split Item Modal */}
+      {showSplitModal && itemToSplit && trip && (
+        <SplitItemModal 
+          onClose={() => { setShowSplitModal(false); setItemToSplit(null); }}
+          onSave={handleSplitItem}
+          item={itemToSplit.item}
+          ownerId={itemToSplit.ownerId}
+          participants={trip.participants}
+          language={language}
+        />
+      )}
+
       {/* RENAME MODAL */}
       {showRenameModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
@@ -1676,6 +1800,125 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+const SplitItemModal: React.FC<{ 
+  onClose: () => void, 
+  onSave: (parts: {name: string, weight: number, assigneeId: string}[]) => void, 
+  item: GearItem,
+  ownerId: string,
+  participants: ParticipantPack[],
+  language: Language 
+}> = ({ onClose, onSave, item, ownerId, participants, language }) => {
+  const t = translations[language];
+  const totalWeight = item.weight * item.quantity;
+  
+  const [parts, setParts] = useState([
+    { id: generateUUID(), name: `${item.name} (Part 1)`, weight: Math.floor(totalWeight / 2), assigneeId: ownerId },
+    { id: generateUUID(), name: `${item.name} (Part 2)`, weight: Math.ceil(totalWeight / 2), assigneeId: participants.length > 1 ? participants.find(p => p.id !== ownerId)?.id || ownerId : ownerId }
+  ]);
+
+  const remainingWeight = totalWeight - parts.reduce((acc, p) => acc + (parseInt(p.weight as any) || 0), 0);
+
+  const addPart = () => {
+     setParts([...parts, { id: generateUUID(), name: `${item.name} (Part ${parts.length + 1})`, weight: 0, assigneeId: ownerId }]);
+  };
+
+  const updatePart = (id: string, field: string, value: any) => {
+     setParts(parts.map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
+  const removePart = (id: string) => {
+     setParts(parts.filter(p => p.id !== id));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+     e.preventDefault();
+     if (remainingWeight !== 0) return;
+     if (parts.some(p => !p.name || p.weight <= 0)) return;
+     onSave(parts);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-10 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-6 sm:mb-8 shrink-0">
+          <div>
+             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+               <Scissors className="text-indigo-600" /> {t.splitItem}
+             </h2>
+             <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">{item.name} ({totalWeight}g)</p>
+          </div>
+          <button onClick={onClose} className="bg-slate-50 p-3 sm:p-4 rounded-full text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto no-scrollbar flex-1 mb-6 space-y-3">
+           {parts.map((part, index) => (
+             <div key={part.id} className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100 flex flex-col gap-3 relative">
+                {parts.length > 2 && (
+                  <button onClick={() => removePart(part.id)} className="absolute top-3 right-3 text-slate-300 hover:text-rose-500">
+                    <X size={16} />
+                  </button>
+                )}
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">{t.partName}</label>
+                  <input 
+                    value={part.name}
+                    onChange={(e) => updatePart(part.id, 'name', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 outline-none font-bold text-slate-800 focus:border-indigo-500 text-xs"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="space-y-1 w-1/3">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">{t.weight} (g)</label>
+                    <input 
+                      type="number"
+                      value={part.weight}
+                      onChange={(e) => updatePart(part.id, 'weight', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 outline-none font-bold text-slate-800 focus:border-indigo-500 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">{t.assignTo}</label>
+                    <select 
+                      value={part.assigneeId}
+                      onChange={(e) => updatePart(part.id, 'assigneeId', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 outline-none font-bold text-slate-800 focus:border-indigo-500 text-xs appearance-none"
+                    >
+                      {participants.map(p => (
+                        <option key={p.id} value={p.id}>{p.ownerName}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+             </div>
+           ))}
+           
+           <button onClick={addPart} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-[1.5rem] text-slate-400 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:border-indigo-300 hover:text-indigo-500 transition-all">
+             <Plus size={14} /> {t.addPart}
+          </button>
+        </div>
+
+        <div className="shrink-0 pt-4 border-t border-slate-100 space-y-4">
+          <div className={`flex justify-between items-center p-4 rounded-[1.5rem] border-2 transition-all ${remainingWeight === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : remainingWeight < 0 ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+             <span className="font-black uppercase tracking-widest text-[10px]">{t.remainingWeight}</span>
+             <span className="font-black text-lg">{remainingWeight}g</span>
+          </div>
+          <button 
+            onClick={handleSubmit}
+            disabled={remainingWeight !== 0}
+            className={`w-full font-black py-5 rounded-[1.5rem] tracking-[0.2em] text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${
+              remainingWeight === 0 ? 'bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {remainingWeight === 0 ? t.splitAction : t.weightError}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

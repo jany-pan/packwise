@@ -24,6 +24,13 @@ export interface GearItem {
   isChecked?: boolean;
   notes?: string;
   link?: string;
+  splitData?: {
+    groupId: string;
+    originalOwnerId: string;
+    originalItemName: string;
+    originalItemPrice: number;
+    originalItemRaw: string;
+  };
 }
 
 export interface ParticipantPack {
